@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // plane imports
@@ -14,6 +14,7 @@ import { ChevronDownOutline } from "@makeplane/propel/icons";
 import type { IIssueDisplayFilterOptions, IIssueDisplayProperties } from "@plane/types";
 import { EIssuesStoreType, EIssueLayoutTypes } from "@plane/types";
 // components
+import { WorkItemsModal } from "@/components/analytics/work-items/modal";
 import {
   DisplayFiltersSelection,
   FiltersDropdown,
@@ -26,6 +27,7 @@ import { useProject } from "@/hooks/store/use-project";
 export const ProjectIssuesMobileHeader = observer(function ProjectIssuesMobileHeader() {
   // i18n
   const { t } = useTranslation();
+  const [analyticsModal, setAnalyticsModal] = useState(false);
   const { workspaceSlug, projectId } = useParams();
   const { currentProjectDetails } = useProject();
 
@@ -61,6 +63,11 @@ export const ProjectIssuesMobileHeader = observer(function ProjectIssuesMobileHe
 
   return (
     <>
+      <WorkItemsModal
+        isOpen={analyticsModal}
+        onClose={() => setAnalyticsModal(false)}
+        projectDetails={currentProjectDetails ?? undefined}
+      />
       <div className="z-[13] flex justify-evenly border-b border-subtle bg-surface-1 py-2 md:hidden">
         <MobileLayoutSelection
           layouts={[EIssueLayoutTypes.LIST, EIssueLayoutTypes.KANBAN, EIssueLayoutTypes.CALENDAR]}
@@ -90,6 +97,13 @@ export const ProjectIssuesMobileHeader = observer(function ProjectIssuesMobileHe
             />
           </FiltersDropdown>
         </div>
+
+        <button
+          onClick={() => setAnalyticsModal(true)}
+          className="flex flex-grow justify-center border-l border-subtle text-13 text-secondary"
+        >
+          {t("common.analytics")}
+        </button>
       </div>
     </>
   );

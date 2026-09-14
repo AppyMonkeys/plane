@@ -65,6 +65,91 @@
       }
     }
   },
+  "workspace_analytics": {
+    "label": "Analytics",
+    "page_label": "{workspace} - Analytics",
+    "open_tasks": "Total open tasks",
+    "error": "There was some error in fetching the data.",
+    "work_items_closed_in": "Work items closed in",
+    "selected_projects": "Selected projects",
+    "total_members": "Total members",
+    "total_cycles": "Total cycles",
+    "total_modules": "Total modules",
+    "pending_work_items": {
+      "title": "Pending work items",
+      "empty_state": "Analysis of pending work items by co-workers appears here."
+    },
+    "work_items_closed_in_a_year": {
+      "title": "Work items closed in a year",
+      "empty_state": "Close work items to view analysis of the same in the form of a graph."
+    },
+    "most_work_items_created": {
+      "title": "Most work items created",
+      "empty_state": "Co-workers and the number of work items created by them appears here."
+    },
+    "most_work_items_closed": {
+      "title": "Most work items closed",
+      "empty_state": "Co-workers and the number of work items closed by them appears here."
+    },
+    "tabs": {
+      "scope_and_demand": "Scope and Demand",
+      "custom": "Custom Analytics"
+    },
+    "total": "Total {entity}",
+    "started_work_items": "Started {entity}",
+    "backlog_work_items": "Backlog {entity}",
+    "un_started_work_items": "Unstarted {entity}",
+    "completed_work_items": "Completed {entity}",
+    "project_insights": "Project Insights",
+    "summary_of_projects": "Summary of Projects",
+    "all_projects": "All Projects",
+    "trend_on_charts": "Trend on charts",
+    "active_projects": "Active Projects",
+    "customized_insights": "Customized Insights",
+    "created_vs_resolved": "Created vs Resolved",
+    "empty_state": {
+      "project_insights": {
+        "title": "No data yet",
+        "description": "Work items assigned to you, broken down by state, will show up here."
+      },
+      "created_vs_resolved": {
+        "title": "No data yet",
+        "description": "Work items created and resolved over time will show up here."
+      },
+      "customized_insights": {
+        "title": "No data yet",
+        "description": "Work items assigned to you, broken down by state, will show up here."
+      },
+      "general": {
+        "title": "Track progress, workloads, and allocations. Spot trends, remove blockers, and move work faster",
+        "description": "See scope versus demand, estimates, and scope creep. Get performance by team members and teams, and make sure your project runs on time.",
+        "primary_button": {
+          "text": "Start your first project",
+          "comic": {
+            "title": "Analytics works best with Cycles + Modules",
+            "description": "First, timebox your issues into Cycles and, if you can, group issues that span more than a cycle into Modules. Check out both on the left nav."
+          }
+        }
+      },
+      "cycle_progress": {
+        "title": "No data yet",
+        "description": "Cycle progress analytics will appear here. Add work items to cycles to start tracking progress."
+      },
+      "module_progress": {
+        "title": "No data yet",
+        "description": "Module progress analytics will appear here. Add work items to modules to start tracking progress."
+      },
+      "intake_trends": {
+        "title": "No data yet",
+        "description": "Intake trends analytics will appear here. Add work items to intake to start tracking trends."
+      }
+    },
+    "upgrade_to_plan": "Upgrade to {plan} to unlock {tab}",
+    "workitem_resolved_vs_pending": "Work items resolved vs pending",
+    "projects_by_status": "Projects by status",
+    "active_users": "Active users",
+    "intake_trends": "Intake Trends"
+  },
   "workspace_projects": {
     "label": "{count, plural, one {Project} other {Projects}}",
     "create": {

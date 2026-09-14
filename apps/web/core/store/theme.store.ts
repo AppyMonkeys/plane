@@ -14,6 +14,7 @@ export interface IThemeStore {
   isExtendedSidebarOpened: boolean | undefined;
   isExtendedProjectSidebarOpened: boolean | undefined;
   profileSidebarCollapsed: boolean | undefined;
+  workspaceAnalyticsSidebarCollapsed: boolean | undefined;
   issueDetailSidebarCollapsed: boolean | undefined;
   epicDetailSidebarCollapsed: boolean | undefined;
   initiativesSidebarCollapsed: boolean | undefined;
@@ -25,6 +26,7 @@ export interface IThemeStore {
   toggleExtendedSidebar: (collapsed?: boolean) => void;
   toggleExtendedProjectSidebar: (collapsed?: boolean) => void;
   toggleProfileSidebar: (collapsed?: boolean) => void;
+  toggleWorkspaceAnalyticsSidebar: (collapsed?: boolean) => void;
   toggleIssueDetailSidebar: (collapsed?: boolean) => void;
   toggleEpicDetailSidebar: (collapsed?: boolean) => void;
   toggleInitiativesSidebar: (collapsed?: boolean) => void;
@@ -39,6 +41,7 @@ export class ThemeStore implements IThemeStore {
   isExtendedSidebarOpened: boolean | undefined = undefined;
   isExtendedProjectSidebarOpened: boolean | undefined = undefined;
   profileSidebarCollapsed: boolean | undefined = undefined;
+  workspaceAnalyticsSidebarCollapsed: boolean | undefined = undefined;
   issueDetailSidebarCollapsed: boolean | undefined = undefined;
   epicDetailSidebarCollapsed: boolean | undefined = undefined;
   initiativesSidebarCollapsed: boolean | undefined = undefined;
@@ -53,6 +56,7 @@ export class ThemeStore implements IThemeStore {
       isExtendedSidebarOpened: observable.ref,
       isExtendedProjectSidebarOpened: observable.ref,
       profileSidebarCollapsed: observable.ref,
+      workspaceAnalyticsSidebarCollapsed: observable.ref,
       issueDetailSidebarCollapsed: observable.ref,
       epicDetailSidebarCollapsed: observable.ref,
       initiativesSidebarCollapsed: observable.ref,
@@ -64,6 +68,7 @@ export class ThemeStore implements IThemeStore {
       toggleExtendedSidebar: action,
       toggleExtendedProjectSidebar: action,
       toggleProfileSidebar: action,
+      toggleWorkspaceAnalyticsSidebar: action,
       toggleIssueDetailSidebar: action,
       toggleEpicDetailSidebar: action,
       toggleInitiativesSidebar: action,
@@ -140,6 +145,19 @@ export class ThemeStore implements IThemeStore {
       this.profileSidebarCollapsed = collapsed;
     }
     localStorage.setItem("profile_sidebar_collapsed", this.profileSidebarCollapsed.toString());
+  };
+
+  /**
+   * Toggle the profile sidebar collapsed state
+   * @param collapsed
+   */
+  toggleWorkspaceAnalyticsSidebar = (collapsed?: boolean) => {
+    if (collapsed === undefined) {
+      this.workspaceAnalyticsSidebarCollapsed = !this.workspaceAnalyticsSidebarCollapsed;
+    } else {
+      this.workspaceAnalyticsSidebarCollapsed = collapsed;
+    }
+    localStorage.setItem("workspace_analytics_sidebar_collapsed", this.workspaceAnalyticsSidebarCollapsed.toString());
   };
 
   toggleIssueDetailSidebar = (collapsed?: boolean) => {

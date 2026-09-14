@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // plane imports
@@ -15,10 +15,12 @@ import type { IIssueDisplayFilterOptions, IIssueDisplayProperties, EIssueLayoutT
 import { EIssuesStoreType } from "@plane/types";
 import { CustomMenu } from "@plane/ui";
 // components
+import { WorkItemsModal } from "@/components/analytics/work-items/modal";
 import { DisplayFiltersSelection, FiltersDropdown } from "@/components/issues/issue-layouts/filters";
 import { IssueLayoutIcon } from "@/components/issues/issue-layouts/layout-icon";
 // hooks
 import { useIssues } from "@/hooks/store/use-issues";
+import { useModule } from "@/hooks/store/use-module";
 import { useProject } from "@/hooks/store/use-project";
 
 const SUPPORTED_LAYOUTS = [
@@ -30,15 +32,19 @@ const SUPPORTED_LAYOUTS = [
 export const ModuleIssuesMobileHeader = observer(function ModuleIssuesMobileHeader() {
   // router
   const { workspaceSlug, projectId, moduleId } = useParams();
+  // states
+  const [analyticsModal, setAnalyticsModal] = useState(false);
   // plane hooks
   const { t } = useTranslation();
   // store hooks
   const { currentProjectDetails } = useProject();
+  const { getModuleById } = useModule();
   const {
     issuesFilter: { issueFilters, updateFilters },
   } = useIssues(EIssuesStoreType.MODULE);
   // derived values
   const activeLayout = issueFilters?.displayFilters?.layout;
+  const moduleDetails = moduleId ? getModuleById(moduleId.toString()) : undefined;
 
   const handleLayoutChange = useCallback(
     (layout: EIssueLayoutTypes) => {
@@ -66,6 +72,12 @@ export const ModuleIssuesMobileHeader = observer(function ModuleIssuesMobileHead
 
   return (
     <div className="block md:hidden">
+      <WorkItemsModal
+        isOpen={analyticsModal}
+        onClose={() => setAnalyticsModal(false)}
+        moduleDetails={moduleDetails ?? undefined}
+        projectDetails={currentProjectDetails}
+      />
       <div className="flex justify-evenly border-b border-subtle bg-surface-1 py-2">
         <CustomMenu
           maxHeight={"md"}
@@ -113,6 +125,13 @@ export const ModuleIssuesMobileHeader = observer(function ModuleIssuesMobileHead
             />
           </FiltersDropdown>
         </div>
+
+        <button
+          onClick={() => setAnalyticsModal(true)}
+          className="flex flex-grow justify-center border-l border-subtle text-13 text-secondary"
+        >
+          Analytics
+        </button>
       </div>
     </div>
   );

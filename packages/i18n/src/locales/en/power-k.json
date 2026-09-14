@@ -87,6 +87,7 @@
       "nav_assigned_workspace_work_items": "Go to assigned work items",
       "nav_created_workspace_work_items": "Go to created work items",
       "nav_subscribed_workspace_work_items": "Go to subscribed work items",
+      "nav_workspace_analytics": "Go to workspace analytics",
       "nav_workspace_drafts": "Go to workspace drafts",
       "nav_workspace_archives": "Go to workspace archives",
       "open_workspace_setting": "Open a workspace setting",

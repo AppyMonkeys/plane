@@ -100,6 +100,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.staticfiles",
     # Inhouse apps
+    "plane.analytics",
     "plane.app",
     "plane.space",
     "plane.bgtasks",

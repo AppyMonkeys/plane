@@ -4,11 +4,11 @@
  * See the LICENSE file for details.
  */
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // icons
-import { CyclesOutline, PreferencesOutline } from "@makeplane/propel/icons";
+import { BarOutline, CyclesOutline, PreferencesOutline, RightSidePaneOutline } from "@makeplane/propel/icons";
 // plane imports
 import {
   EIssueFilterType,
@@ -19,11 +19,14 @@ import {
 import { usePlatformOS } from "@plane/hooks";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
+import { IconButton } from "@plane/propel/icon-button";
 import { Tooltip } from "@makeplane/propel/components/tooltip";
 import type { ICustomSearchSelectOption, IIssueDisplayFilterOptions, IIssueDisplayProperties } from "@plane/types";
 import { EIssuesStoreType, EIssueLayoutTypes } from "@plane/types";
 import { Breadcrumbs, BreadcrumbNavigationSearchDropdown, Header } from "@plane/ui";
+import { cn } from "@plane/utils";
 // components
+import { WorkItemsModal } from "@/components/analytics/work-items/modal";
 import { BreadcrumbLink } from "@/components/common/breadcrumb-link";
 import { SwitcherLabel } from "@/components/common/switcher-label";
 import { CycleQuickActions } from "@/components/cycles/quick-actions";
@@ -41,12 +44,15 @@ import { useIssues } from "@/hooks/store/use-issues";
 import { useProject } from "@/hooks/store/use-project";
 import { useUserPermissions } from "@/hooks/store/user";
 import { useAppRouter } from "@/hooks/use-app-router";
+import useLocalStorage from "@/hooks/use-local-storage";
 // plane web imports
 import { CommonProjectBreadcrumbs } from "@/components/breadcrumbs/common";
 
 export const CycleIssuesHeader = observer(function CycleIssuesHeader() {
   // refs
   const parentRef = useRef<HTMLDivElement>(null);
+  // states
+  const [analyticsModal, setAnalyticsModal] = useState(false);
   // router
   const router = useAppRouter();
   const { workspaceSlug, projectId, cycleId } = useParams();
@@ -64,6 +70,13 @@ export const CycleIssuesHeader = observer(function CycleIssuesHeader() {
   const { allowPermissions } = useUserPermissions();
 
   const activeLayout = issueFilters?.displayFilters?.layout;
+
+  const { setValue, storedValue } = useLocalStorage("cycle_sidebar_collapsed", false);
+
+  const isSidebarCollapsed = storedValue === true;
+  const toggleSidebar = () => {
+    setValue(!isSidebarCollapsed);
+  };
 
   const handleLayoutChange = useCallback(
     (layout: EIssueLayoutTypes) => {
@@ -113,6 +126,12 @@ export const CycleIssuesHeader = observer(function CycleIssuesHeader() {
 
   return (
     <>
+      <WorkItemsModal
+        projectDetails={currentProjectDetails}
+        isOpen={analyticsModal}
+        onClose={() => setAnalyticsModal(false)}
+        cycleDetails={cycleDetails ?? undefined}
+      />
       <Header>
         <Header.LeftItem>
           <div className="flex items-center gap-2">
@@ -209,17 +228,36 @@ export const CycleIssuesHeader = observer(function CycleIssuesHeader() {
               />
             </FiltersDropdown>
 
-            {canUserCreateIssue && !isCompletedCycle && (
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={() => {
-                  toggleCreateIssueModal(true, EIssuesStoreType.CYCLE);
-                }}
-              >
-                {t("issue.add.label")}
-              </Button>
+            {canUserCreateIssue && (
+              <>
+                <Button onClick={() => setAnalyticsModal(true)} variant="secondary" size="lg">
+                  <span className="hidden @4xl:flex">Analytics</span>
+                  <span className="@4xl:hidden">
+                    <BarOutline className="size-3.5" />
+                  </span>
+                </Button>
+                {!isCompletedCycle && (
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => {
+                      toggleCreateIssueModal(true, EIssuesStoreType.CYCLE);
+                    }}
+                  >
+                    {t("issue.add.label")}
+                  </Button>
+                )}
+              </>
             )}
+            <IconButton
+              variant="tertiary"
+              size="lg"
+              icon={RightSidePaneOutline}
+              onClick={toggleSidebar}
+              className={cn({
+                "bg-accent-subtle text-accent-primary": !isSidebarCollapsed,
+              })}
+            />
             <CycleQuickActions
               parentRef={parentRef}
               cycleId={cycleId}

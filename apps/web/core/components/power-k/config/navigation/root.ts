@@ -40,6 +40,7 @@ export const usePowerKNavigationCommands = (): TPowerKCommandConfig[] => {
     optionsList["nav_assigned_workspace_work_items"],
     optionsList["nav_created_workspace_work_items"],
     optionsList["nav_subscribed_workspace_work_items"],
+    optionsList["nav_workspace_analytics"],
     optionsList["nav_workspace_settings"],
     optionsList["nav_workspace_drafts"],
     optionsList["nav_workspace_archives"],

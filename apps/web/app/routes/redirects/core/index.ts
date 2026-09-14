@@ -16,6 +16,9 @@ export const coreRedirectRoutes: RouteConfigEntry[] = [
   // → /:workspaceSlug/settings/projects/:projectId/:path*
   route(":workspaceSlug/projects/:projectId/settings/*", "routes/redirects/core/project-settings.tsx"),
 
+  // Analytics redirect: /:workspaceSlug/analytics → /:workspaceSlug/analytics/overview
+  route(":workspaceSlug/analytics", "routes/redirects/core/analytics.tsx"),
+
   // API tokens redirect: /:workspaceSlug/settings/api-tokens
   // → /settings/profile/api-tokens
   route(":workspaceSlug/settings/api-tokens", "routes/redirects/core/api-tokens.tsx"),

@@ -196,6 +196,27 @@ from .intake.base import (
     IntakeWorkItemDescriptionVersionEndpoint,
 )
 
+from .analytic.base import (
+    AnalyticsEndpoint,
+    AnalyticViewViewset,
+    SavedAnalyticEndpoint,
+    ExportAnalyticsEndpoint,
+    DefaultAnalyticsEndpoint,
+    ProjectStatsEndpoint,
+)
+
+from .analytic.advance import (
+    AdvanceAnalyticsEndpoint,
+    AdvanceAnalyticsStatsEndpoint,
+    AdvanceAnalyticsChartEndpoint,
+)
+
+from .analytic.project_analytics import (
+    ProjectAdvanceAnalyticsEndpoint,
+    ProjectAdvanceAnalyticsStatsEndpoint,
+    ProjectAdvanceAnalyticsChartEndpoint,
+)
+
 from .notification.base import (
     NotificationViewSet,
     UnreadNotificationEndpoint,
