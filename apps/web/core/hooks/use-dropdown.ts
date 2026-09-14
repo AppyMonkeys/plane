@@ -63,7 +63,15 @@ export const useDropdown = (args: TArguments) => {
    */
   const handleOnClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.stopPropagation();
-    e.preventDefault();
+    // Do NOT call e.preventDefault() here. These dropdown buttons are rendered as the
+    // Fragment child of a Headless UI <Combobox.Button>/<Listbox.Button>, which clones its
+    // own click handler onto this same element and merges it with this one via
+    // @headlessui/react's mergeProps. That merge runs this handler first, then skips its
+    // own handler if the event's defaultPrevented is already true. Headless UI's own click
+    // handler is what flips its internal open/closed state, which option-selection depends
+    // on — calling preventDefault() here silently breaks selecting options with a click on
+    // every state/priority/assignee/etc. dropdown built on this hook, even though the panel
+    // still visually opens (that part is driven by our own isOpen state, not Headless UI's).
     toggleDropdown();
   };
 
