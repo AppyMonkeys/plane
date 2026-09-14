@@ -106,12 +106,44 @@ class UserNotificationPreference(BaseModel):
     comment = models.BooleanField(default=True)
     mention = models.BooleanField(default=True)
     issue_completed = models.BooleanField(default=True)
+    # whether the above events should also be pushed as a browser notification
+    browser_push = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "UserNotificationPreference"
         verbose_name_plural = "UserNotificationPreferences"
         db_table = "user_notification_preferences"
         ordering = ("-created_at",)
+
+    def __str__(self):
+        """Return the user"""
+        return f"<{self.user}>"
+
+
+class WebPushSubscription(BaseModel):
+    """A browser's Web Push subscription (per the Push API), used to deliver
+    OS-level notification popups for a user's in-app notifications."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="web_push_subscriptions",
+    )
+    endpoint = models.URLField(max_length=1000)
+    p256dh = models.CharField(max_length=255)
+    auth = models.CharField(max_length=255)
+    user_agent = models.CharField(max_length=255, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Web Push Subscription"
+        verbose_name_plural = "Web Push Subscriptions"
+        db_table = "web_push_subscriptions"
+        ordering = ("-created_at",)
+        unique_together = ["user", "endpoint"]
+        indexes = [
+            models.Index(fields=["user", "is_active"], name="webpush_user_active_idx")
+        ]
 
     def __str__(self):
         """Return the user"""

@@ -5,7 +5,7 @@
 # Module imports
 from .base import BaseSerializer
 from .user import UserLiteSerializer
-from plane.db.models import Notification, UserNotificationPreference
+from plane.db.models import Notification, UserNotificationPreference, WebPushSubscription
 
 # Third Party imports
 from rest_framework import serializers
@@ -26,3 +26,10 @@ class UserNotificationPreferenceSerializer(BaseSerializer):
     class Meta:
         model = UserNotificationPreference
         fields = "__all__"
+
+
+class WebPushSubscriptionSerializer(BaseSerializer):
+    class Meta:
+        model = WebPushSubscription
+        fields = ["id", "endpoint", "p256dh", "auth", "user_agent"]
+        read_only_fields = ["id"]

@@ -221,6 +221,8 @@ from .notification.base import (
     NotificationViewSet,
     UnreadNotificationEndpoint,
     UserNotificationPreferenceEndpoint,
+    WebPushSubscriptionEndpoint,
+    WebPushVAPIDPublicKeyEndpoint,
 )
 
 from .exporter.base import ExportIssuesEndpoint

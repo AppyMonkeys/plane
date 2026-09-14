@@ -3,6 +3,7 @@
 # See the LICENSE file for details.
 
 # Django imports
+from django.conf import settings
 from django.db.models import Exists, OuterRef, Q, Case, When, BooleanField
 from django.utils import timezone
 
@@ -13,6 +14,7 @@ from rest_framework.response import Response
 from plane.app.serializers import (
     NotificationSerializer,
     UserNotificationPreferenceSerializer,
+    WebPushSubscriptionSerializer,
 )
 from plane.db.models import (
     Issue,
@@ -20,6 +22,7 @@ from plane.db.models import (
     IssueSubscriber,
     Notification,
     UserNotificationPreference,
+    WebPushSubscription,
     WorkspaceMember,
 )
 from plane.utils.paginator import BasePaginator
@@ -311,3 +314,48 @@ class UserNotificationPreferenceEndpoint(BaseAPIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class WebPushVAPIDPublicKeyEndpoint(BaseAPIView):
+    """Exposes the server's VAPID public key so the frontend can create a
+    PushSubscription via the browser's Push API."""
+
+    def get(self, request):
+        if not settings.VAPID_PUBLIC_KEY:
+            return Response(
+                {"error": "Browser push notifications are not configured on this server."},
+                status=status.HTTP_501_NOT_IMPLEMENTED,
+            )
+        return Response({"public_key": settings.VAPID_PUBLIC_KEY}, status=status.HTTP_200_OK)
+
+
+class WebPushSubscriptionEndpoint(BaseAPIView):
+    """Create/remove the current user's browser Web Push subscriptions."""
+
+    def post(self, request):
+        serializer = WebPushSubscriptionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # A given browser/device re-subscribes with the same endpoint on refresh;
+        # keep it a single active row per (user, endpoint) instead of erroring.
+        subscription, _ = WebPushSubscription.objects.update_or_create(
+            user=request.user,
+            endpoint=serializer.validated_data["endpoint"],
+            defaults={
+                "p256dh": serializer.validated_data["p256dh"],
+                "auth": serializer.validated_data["auth"],
+                "user_agent": serializer.validated_data.get("user_agent"),
+                "is_active": True,
+            },
+        )
+        return Response(
+            WebPushSubscriptionSerializer(subscription).data, status=status.HTTP_201_CREATED
+        )
+
+    def delete(self, request):
+        endpoint = request.data.get("endpoint")
+        if not endpoint:
+            return Response({"error": "endpoint is required"}, status=status.HTTP_400_BAD_REQUEST)
+        WebPushSubscription.objects.filter(user=request.user, endpoint=endpoint).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

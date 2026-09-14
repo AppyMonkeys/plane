@@ -18,6 +18,8 @@ django-cors-headers==4.9.0
 celery==5.5.3
 django_celery_beat==2.9.0
 django-celery-results==2.6.0
+# web push (browser notifications)
+pywebpush==2.0.3
 # file serve
 whitenoise==6.12.0
 # fake data

@@ -122,7 +122,11 @@ from .intake import (
 
 from .analytic import AnalyticViewSerializer
 
-from .notification import NotificationSerializer, UserNotificationPreferenceSerializer
+from .notification import (
+    NotificationSerializer,
+    UserNotificationPreferenceSerializer,
+    WebPushSubscriptionSerializer,
+)
 
 from .exporter import ExporterHistorySerializer
 

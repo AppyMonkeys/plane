@@ -30,6 +30,9 @@ from django.db.models import Subquery
 from celery import shared_task
 from bs4 import BeautifulSoup
 
+# Module imports
+from plane.bgtasks.web_push_task import send_web_push_notifications
+
 
 # =========== Issue Description Html Parsing and notification Functions ======================
 
@@ -666,8 +669,10 @@ def notifications(
                 removed_mention=removed_mention,
             )
             # Bulk create notifications
-            Notification.objects.bulk_create(bulk_notifications, batch_size=100)
+            created_notifications = Notification.objects.bulk_create(bulk_notifications, batch_size=100)
             EmailNotificationLog.objects.bulk_create(bulk_email_logs, batch_size=100, ignore_conflicts=True)
+            if created_notifications:
+                send_web_push_notifications.delay([notification.id for notification in created_notifications])
         return
     except Exception as e:
         print(e)

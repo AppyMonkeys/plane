@@ -10,6 +10,8 @@ from plane.app.views import (
     UnreadNotificationEndpoint,
     MarkAllReadNotificationViewSet,
     UserNotificationPreferenceEndpoint,
+    WebPushSubscriptionEndpoint,
+    WebPushVAPIDPublicKeyEndpoint,
 )
 
 
@@ -48,5 +50,15 @@ urlpatterns = [
         "users/me/notification-preferences/",
         UserNotificationPreferenceEndpoint.as_view(),
         name="user-notification-preferences",
+    ),
+    path(
+        "users/me/push-subscriptions/vapid-public-key/",
+        WebPushVAPIDPublicKeyEndpoint.as_view(),
+        name="web-push-vapid-public-key",
+    ),
+    path(
+        "users/me/push-subscriptions/",
+        WebPushSubscriptionEndpoint.as_view(),
+        name="web-push-subscriptions",
     ),
 ]
