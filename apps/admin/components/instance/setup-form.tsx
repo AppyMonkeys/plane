@@ -11,7 +11,6 @@ import { HideOutline, ShowOutline } from "@makeplane/propel/icons";
 // plane internal packages
 import { API_BASE_URL, E_PASSWORD_STRENGTH } from "@plane/constants";
 import { Button } from "@makeplane/propel/components/button";
-import { Checkbox } from "@makeplane/propel/components/checkbox";
 import { Input, InputGroup } from "@makeplane/propel/components/input";
 import { AuthService } from "@plane/services";
 import { getPasswordStrength, validatePersonName, validateCompanyName } from "@plane/utils";
@@ -47,7 +46,6 @@ type TFormData = {
   company_name: string;
   password: string;
   confirm_password?: string;
-  is_telemetry_enabled: boolean;
 };
 
 const defaultFromData: TFormData = {
@@ -56,7 +54,6 @@ const defaultFromData: TFormData = {
   email: "",
   company_name: "",
   password: "",
-  is_telemetry_enabled: true,
 };
 
 export function InstanceSetupForm() {
@@ -66,7 +63,6 @@ export function InstanceSetupForm() {
   const lastNameParam = searchParams?.get("last_name") || undefined;
   const companyParam = searchParams?.get("company") || undefined;
   const emailParam = searchParams?.get("email") || undefined;
-  const isTelemetryEnabledParam = (searchParams?.get("is_telemetry_enabled") === "True" ? true : false) || true;
   const errorCode = searchParams?.get("error_code") || undefined;
   const errorMessage = searchParams?.get("error_message") || undefined;
   // state
@@ -96,8 +92,7 @@ export function InstanceSetupForm() {
     if (lastNameParam) setFormData((prev) => ({ ...prev, last_name: lastNameParam }));
     if (companyParam) setFormData((prev) => ({ ...prev, company_name: companyParam }));
     if (emailParam) setFormData((prev) => ({ ...prev, email: emailParam }));
-    if (isTelemetryEnabledParam) setFormData((prev) => ({ ...prev, is_telemetry_enabled: isTelemetryEnabledParam }));
-  }, [firstNameParam, lastNameParam, companyParam, emailParam, isTelemetryEnabledParam]);
+  }, [firstNameParam, lastNameParam, companyParam, emailParam]);
 
   // derived values
   const errorData: TError = useMemo(() => {
@@ -160,7 +155,6 @@ export function InstanceSetupForm() {
             onError={() => setIsSubmitting(false)}
           >
             <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
-            <input type="hidden" name="is_telemetry_enabled" value={formData.is_telemetry_enabled ? "True" : "False"} />
 
             <div className="flex flex-col items-center gap-4 sm:flex-row">
               <div className="w-full space-y-1">
@@ -345,27 +339,6 @@ export function InstanceSetupForm() {
                 )}
             </div>
 
-            <div className="relative flex gap-2">
-              <div>
-                <Checkbox
-                  id="is_telemetry_enabled"
-                  aria-label="Allow Plane to anonymously collect usage events"
-                  onCheckedChange={(checked) => handleFormChange("is_telemetry_enabled", checked)}
-                  checked={formData.is_telemetry_enabled}
-                />
-              </div>
-              <label className="cursor-pointer text-13 font-medium text-tertiary" htmlFor="is_telemetry_enabled">
-                Allow Plane to anonymously collect usage events.{" "}
-                <a
-                  href="https://developers.plane.so/self-hosting/telemetry"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:text-blue-600 flex-shrink-0 text-13 font-medium"
-                >
-                  See More
-                </a>
-              </label>
-            </div>
 
             <div className="py-2">
               <Button
