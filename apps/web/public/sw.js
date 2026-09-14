@@ -3,18 +3,48 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  * See the LICENSE file for details.
  *
- * Minimal service worker whose only job is to show OS-level notification
- * popups for Web Push messages sent by the backend (see
- * apps/api/plane/bgtasks/web_push_task.py) and focus/open the relevant page
- * when a user clicks one.
+ * Small hand-written service worker (no build-time precache manifest, so it
+ * deliberately never caches hashed JS/CSS bundles — those change on every
+ * deploy and a stale cached one would break the app). It has two jobs:
+ *
+ * 1. Just by being registered (see core/lib/wrappers/service-worker-wrapper.tsx),
+ *    it plus manifest.json is what makes browsers treat Plane as an
+ *    installable PWA, and gives a cached app-shell fallback when offline.
+ * 2. Show OS-level notification popups for Web Push messages sent by the
+ *    backend (see apps/api/plane/bgtasks/web_push_task.py) and focus/open
+ *    the relevant page when a user clicks one.
  */
+
+const APP_SHELL_CACHE = "plane-app-shell-v1";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((key) => key !== APP_SHELL_CACHE).map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
+  );
+});
+
+// Network-first for page navigations, with a cached-shell fallback when
+// offline; everything else (hashed assets, API calls) goes straight to the
+// network untouched.
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode !== "navigate") return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        const responseCopy = response.clone();
+        caches.open(APP_SHELL_CACHE).then((cache) => cache.put("/", responseCopy));
+        return response;
+      })
+      .catch(() => caches.match("/").then((cached) => cached || Response.error()))
+  );
 });
 
 self.addEventListener("push", (event) => {

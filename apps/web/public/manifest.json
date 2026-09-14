@@ -1,6 +1,8 @@
 {
+  "id": "/",
   "name": "Plane",
   "short_name": "Plane",
+  "description": "Plane accelerates software development for agencies and product companies — plan, track, and ship work items, cycles, and modules.",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -16,12 +18,15 @@
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "theme_color": "#FFFFFF",
+  "theme_color": "#3f76ff",
   "background_color": "#FFFFFF",
+  "scope": "/",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "categories": ["productivity", "business"]
 }

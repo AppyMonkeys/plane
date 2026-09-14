@@ -38,10 +38,12 @@ export const links: LinksFunction = () => [
   { rel: "icon", type: "image/png", sizes: "32x32", href: favicon32 },
   { rel: "icon", type: "image/png", sizes: "16x16", href: favicon16 },
   { rel: "shortcut icon", href: faviconIco },
-  { rel: "manifest", href: "/site.webmanifest.json" },
   { rel: "apple-touch-icon", href: icon512 },
   { rel: "apple-touch-icon", sizes: "180x180", href: icon180 },
   { rel: "apple-touch-icon", sizes: "512x512", href: icon512 },
+  // Only one <link rel="manifest"> is honored by browsers; manifest.json has
+  // correctly-sized icons (site.webmanifest.json's are a single 1024x1024
+  // image mislabeled at multiple sizes) so it's the one kept.
   { rel: "manifest", href: "/manifest.json" },
   { rel: "stylesheet", href: globalStyles },
   {

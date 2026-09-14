@@ -15,6 +15,7 @@ import { Toast } from "@plane/propel/toast";
 import { resolveGeneralTheme } from "@plane/utils";
 // mobx store provider
 import { StoreProvider } from "@/lib/store-context";
+import { ServiceWorkerWrapper } from "@/lib/wrappers/service-worker-wrapper";
 
 // lazy imports
 const AppProgressBar = lazy(function AppProgressBar() {
@@ -41,6 +42,7 @@ export function AppProvider(props: IAppProvider) {
   return (
     <StoreProvider>
       <>
+        <ServiceWorkerWrapper />
         <AppProgressBar />
         <TranslationProvider>
           <Toast theme={resolveGeneralTheme(resolvedTheme)} />
