@@ -187,6 +187,15 @@ export interface IUserEmailNotificationSettings {
   comment: boolean;
   mention: boolean;
   issue_completed: boolean;
+  browser_push: boolean;
+}
+
+export interface IWebPushSubscription {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent?: string | null;
 }
 
 export type TProfileViews = "assigned" | "created" | "subscribed";

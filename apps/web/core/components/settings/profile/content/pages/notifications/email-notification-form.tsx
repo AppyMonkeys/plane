@@ -14,6 +14,12 @@ import type { IUserEmailNotificationSettings } from "@plane/types";
 import { Switch } from "@makeplane/propel/components/switch";
 // components
 import { SettingsControlItem } from "@/components/settings/control-item";
+// helpers
+import {
+  disableBrowserPushNotifications,
+  enableBrowserPushNotifications,
+  isBrowserPushSupported,
+} from "@/helpers/browser-push-notification.helper";
 // services
 import { UserService } from "@/services/user.service";
 
@@ -54,12 +60,65 @@ export const NotificationsProfileSettingsForm = observer(function NotificationsP
     }
   };
 
+  const handleBrowserPushChange = async (value: boolean, onChange: (value: boolean) => void) => {
+    try {
+      if (value) {
+        const enabled = await enableBrowserPushNotifications();
+        if (!enabled) {
+          setToast({
+            title: t("error"),
+            type: TOAST_TYPE.ERROR,
+            message: t("browser_notifications_permission_denied"),
+          });
+          return;
+        }
+      } else {
+        await disableBrowserPushNotifications();
+      }
+      await userService.updateCurrentUserEmailNotificationSettings({ browser_push: value });
+      onChange(value);
+      setToast({
+        title: t("success"),
+        type: TOAST_TYPE.SUCCESS,
+        message: t("browser_notification_setting_updated_successfully"),
+      });
+    } catch (_error) {
+      setToast({
+        title: t("error"),
+        type: TOAST_TYPE.ERROR,
+        message: t("failed_to_update_browser_notification_setting"),
+      });
+    }
+  };
+
   useEffect(() => {
     reset(data);
   }, [reset, data]);
 
   return (
     <div className="flex flex-col gap-y-1">
+      {isBrowserPushSupported() && (
+        <SettingsControlItem
+          title={t("browser_notifications")}
+          description={t("browser_notifications_description")}
+          control={
+            <Controller
+              control={control}
+              name="browser_push"
+              render={({ field: { value, onChange } }) => (
+                <Switch
+                  size="sm"
+                  checked={value}
+                  onCheckedChange={(newValue) => {
+                    void handleBrowserPushChange(newValue, onChange);
+                  }}
+                  aria-label={t("browser_notifications")}
+                />
+              )}
+            />
+          }
+        />
+      )}
       <SettingsControlItem
         title={t("property_changes")}
         description={t("property_changes_description")}

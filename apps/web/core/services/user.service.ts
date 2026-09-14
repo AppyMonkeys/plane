@@ -15,6 +15,7 @@ import type {
   IUserProfileProjectSegregation,
   IUserSettings,
   IUserEmailNotificationSettings,
+  IWebPushSubscription,
   TIssuesResponse,
   TUserProfile,
   IEmailCheckResponse,
@@ -139,6 +140,32 @@ export class UserService extends APIService {
 
   async updateCurrentUserEmailNotificationSettings(data: Partial<IUserEmailNotificationSettings>): Promise<any> {
     return this.patch("/api/users/me/notification-preferences/", data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getWebPushVAPIDPublicKey(): Promise<{ public_key: string }> {
+    return this.get("/api/users/me/push-subscriptions/vapid-public-key/")
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async createWebPushSubscription(
+    data: Pick<IWebPushSubscription, "endpoint" | "p256dh" | "auth"> & { user_agent?: string }
+  ): Promise<IWebPushSubscription> {
+    return this.post("/api/users/me/push-subscriptions/", data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteWebPushSubscription(endpoint: string): Promise<any> {
+    return this.delete("/api/users/me/push-subscriptions/", { endpoint })
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;
