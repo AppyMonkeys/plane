@@ -8,6 +8,14 @@ OpenAPI/Swagger configuration for drf-spectacular.
 This file contains the complete configuration for API documentation generation.
 """
 
+import os
+
+# Self-hosted instances don't run at api.plane.so — point Swagger UI's "Try it
+# out" server dropdown at the actual deployment (WEB_URL, already set for
+# every self-hosted install) instead of only the two upstream defaults, so
+# requests made from the docs page hit the right host out of the box.
+_self_hosted_url = os.environ.get("WEB_URL", "").rstrip("/")
+
 SPECTACULAR_SETTINGS = {
     # ========================================================================
     # Basic API Information
@@ -43,7 +51,10 @@ SPECTACULAR_SETTINGS = {
     # ========================================================================
     # Server Configuration
     # ========================================================================
-    "SERVERS": [
+    "SERVERS": (
+        [{"url": _self_hosted_url, "description": "This instance"}] if _self_hosted_url else []
+    )
+    + [
         {"url": "http://localhost:8000", "description": "Local"},
         {"url": "https://api.plane.so", "description": "Production"},
     ],
