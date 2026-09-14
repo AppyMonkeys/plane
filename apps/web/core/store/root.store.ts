@@ -10,8 +10,6 @@ import { FALLBACK_LANGUAGE, setLanguage } from "@plane/i18n";
 import type { IWorkItemFilterStore } from "@plane/shared-state";
 import { WorkItemFilterStore } from "@plane/shared-state";
 // plane web store
-import type { IBaseAnalyticsStore as IAnalyticsStore } from "@/store/analytics.store";
-import { BaseAnalyticsStore as AnalyticsStore } from "@/store/analytics.store";
 import type { IBasePowerKStore as IPowerKStore } from "@/store/base-power-k.store";
 import { BasePowerKStore as PowerKStore } from "@/store/base-power-k.store";
 import type { IStateStore } from "@/store/state.store";
@@ -86,7 +84,6 @@ export class CoreRootStore {
   state: IStateStore;
   label: ILabelStore;
   dashboard: IDashboardStore;
-  analytics: IAnalyticsStore;
   projectPages: IProjectPageStore;
   router: IRouterStore;
   commandPalette: ICommandPaletteStore;
@@ -131,7 +128,6 @@ export class CoreRootStore {
     this.favorite = new FavoriteStore(this);
     this.stickyStore = new StickyStore();
     this.editorAssetStore = new EditorAssetStore();
-    this.analytics = new AnalyticsStore();
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
     this.timelineStore = new TimeLineStore(this);

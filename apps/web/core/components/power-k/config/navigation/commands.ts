@@ -7,7 +7,6 @@
 import {
   ActivityOutline,
   ArchiveOutline,
-  BarOutline,
   CyclesOutline,
   DocumentationOutline,
   EditOutline,
@@ -42,7 +41,6 @@ export type TPowerKNavigationCommandKeys =
   | "nav_assigned_workspace_work_items"
   | "nav_created_workspace_work_items"
   | "nav_subscribed_workspace_work_items"
-  | "nav_workspace_analytics"
   | "nav_workspace_drafts"
   | "nav_workspace_archives"
   | "open_workspace_setting"
@@ -225,18 +223,6 @@ export const usePowerKNavigationCommandsRecord = (): Record<TPowerKNavigationCom
         handlePowerKNavigate(ctx, [ctx.params.workspaceSlug?.toString(), "workspace-views", "subscribed"]),
       isEnabled: (ctx) => baseWorkspaceConditions(ctx),
       isVisible: (ctx) => baseWorkspaceConditions(ctx),
-      closeOnSelect: true,
-    },
-    nav_workspace_analytics: {
-      id: "nav_workspace_analytics",
-      type: "action",
-      group: "navigation",
-      i18n_title: "power_k.navigation_actions.nav_workspace_analytics",
-      icon: BarOutline,
-      keySequence: "ga",
-      action: (ctx) => handlePowerKNavigate(ctx, [ctx.params.workspaceSlug?.toString(), "analytics", "overview"]),
-      isEnabled: (ctx) => baseWorkspaceConditions(ctx) && hasWorkspaceMemberLevelPermissions(ctx),
-      isVisible: (ctx) => baseWorkspaceConditions(ctx) && hasWorkspaceMemberLevelPermissions(ctx),
       closeOnSelect: true,
     },
     nav_workspace_drafts: {

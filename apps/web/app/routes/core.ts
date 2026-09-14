@@ -67,11 +67,6 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(":workspaceSlug/active-cycles", "./(all)/[workspaceSlug]/(projects)/active-cycles/page.tsx"),
         ]),
 
-        // Analytics
-        layout("./(all)/[workspaceSlug]/(projects)/analytics/[tabId]/layout.tsx", [
-          route(":workspaceSlug/analytics/:tabId", "./(all)/[workspaceSlug]/(projects)/analytics/[tabId]/page.tsx"),
-        ]),
-
         // Browse
         layout("./(all)/[workspaceSlug]/(projects)/browse/[workItem]/layout.tsx", [
           route(":workspaceSlug/browse/:workItem", "./(all)/[workspaceSlug]/(projects)/browse/[workItem]/page.tsx"),
@@ -374,9 +369,6 @@ export const coreRoutes: RouteConfigEntry[] = [
   // Project settings redirect: /:workspaceSlug/projects/:projectId/settings/:path*
   // → /:workspaceSlug/settings/projects/:projectId/:path*
   route(":workspaceSlug/projects/:projectId/settings/*", "routes/redirects/core/project-settings.tsx"),
-
-  // Analytics redirect: /:workspaceSlug/analytics → /:workspaceSlug/analytics/overview
-  route(":workspaceSlug/analytics", "routes/redirects/core/analytics.tsx"),
 
   // API tokens redirect: /:workspaceSlug/settings/api-tokens
   // → /settings/profile/api-tokens

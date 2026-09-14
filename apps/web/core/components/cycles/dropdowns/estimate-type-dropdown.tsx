@@ -11,8 +11,16 @@ import { EEstimateSystem } from "@plane/types";
 import { CustomSelect } from "@plane/ui";
 import { useProjectEstimates } from "@/hooks/store/estimates";
 import { useCycle } from "@/hooks/store/use-cycle";
-// local imports
-import { cycleEstimateOptions } from "../analytics-sidebar/issue-progress";
+
+type TCycleEstimateOption = {
+  value: string;
+  label: string;
+};
+
+const cycleEstimateOptions: TCycleEstimateOption[] = [
+  { value: "issues", label: "Work items" },
+  { value: "points", label: "Estimates" },
+];
 
 type TProps = {
   value: TCycleEstimateType;

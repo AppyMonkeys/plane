@@ -4,11 +4,11 @@
  * See the LICENSE file for details.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // icons
-import { BarOutline, ModuleOutline, PreferencesOutline, RightSidePaneOutline } from "@makeplane/propel/icons";
+import { ModuleOutline, PreferencesOutline } from "@makeplane/propel/icons";
 // plane imports
 import {
   EIssueFilterType,
@@ -21,9 +21,7 @@ import { Tooltip } from "@makeplane/propel/components/tooltip";
 import type { ICustomSearchSelectOption, IIssueDisplayFilterOptions, IIssueDisplayProperties } from "@plane/types";
 import { EIssuesStoreType, EIssueLayoutTypes } from "@plane/types";
 import { Breadcrumbs, Header, BreadcrumbNavigationSearchDropdown } from "@plane/ui";
-import { cn } from "@plane/utils";
 // components
-import { WorkItemsModal } from "@/components/analytics/work-items/modal";
 import { BreadcrumbLink } from "@/components/common/breadcrumb-link";
 import { SwitcherLabel } from "@/components/common/switcher-label";
 import {
@@ -42,17 +40,13 @@ import { useProject } from "@/hooks/store/use-project";
 import { useUserPermissions } from "@/hooks/store/user";
 import { useAppRouter } from "@/hooks/use-app-router";
 import { useIssuesActions } from "@/hooks/use-issues-actions";
-import useLocalStorage from "@/hooks/use-local-storage";
 import { usePlatformOS } from "@/hooks/use-platform-os";
 // plane web imports
 import { CommonProjectBreadcrumbs } from "@/components/breadcrumbs/common";
-import { IconButton } from "@plane/propel/icon-button";
 
 export const ModuleIssuesHeader = observer(function ModuleIssuesHeader() {
   // refs
   const parentRef = useRef<HTMLDivElement>(null);
-  // states
-  const [analyticsModal, setAnalyticsModal] = useState(false);
   // router
   const router = useAppRouter();
   const { workspaceSlug, projectId, moduleId: routerModuleId } = useParams();
@@ -69,10 +63,7 @@ export const ModuleIssuesHeader = observer(function ModuleIssuesHeader() {
   const { toggleCreateIssueModal } = useCommandPalette();
   const { allowPermissions } = useUserPermissions();
   const { currentProjectDetails, loader } = useProject();
-  // local storage
-  const { setValue, storedValue } = useLocalStorage("module_sidebar_collapsed", "false");
   // derived values
-  const isSidebarCollapsed = storedValue ? storedValue === "true" : false;
   const activeLayout = issueFilters?.displayFilters?.layout;
   const moduleDetails = moduleId ? getModuleById(moduleId) : undefined;
   const canUserCreateIssue = allowPermissions(
@@ -80,10 +71,6 @@ export const ModuleIssuesHeader = observer(function ModuleIssuesHeader() {
     EUserPermissionsLevel.PROJECT
   );
   const workItemsCount = getGroupIssueCount(undefined, undefined, false);
-
-  const toggleSidebar = () => {
-    setValue(`${!isSidebarCollapsed}`);
-  };
 
   const handleLayoutChange = useCallback(
     (layout: EIssueLayoutTypes) => {
@@ -123,12 +110,6 @@ export const ModuleIssuesHeader = observer(function ModuleIssuesHeader() {
 
   return (
     <>
-      <WorkItemsModal
-        isOpen={analyticsModal}
-        onClose={() => setAnalyticsModal(false)}
-        moduleDetails={moduleDetails ?? undefined}
-        projectDetails={currentProjectDetails}
-      />
       <Header>
         <Header.LeftItem>
           <div className="flex items-center gap-2">
@@ -224,36 +205,19 @@ export const ModuleIssuesHeader = observer(function ModuleIssuesHeader() {
           </div>
 
           {canUserCreateIssue ? (
-            <>
-              <Button className="hidden md:block" onClick={() => setAnalyticsModal(true)} variant="secondary" size="lg">
-                <span className="hidden @4xl:flex">Analytics</span>
-                <span className="@4xl:hidden">
-                  <BarOutline className="size-3.5" />
-                </span>
-              </Button>
-              <Button
-                variant="primary"
-                size="lg"
-                className="hidden sm:flex"
-                onClick={() => {
-                  toggleCreateIssueModal(true, EIssuesStoreType.MODULE);
-                }}
-              >
-                Add work item
-              </Button>
-            </>
+            <Button
+              variant="primary"
+              size="lg"
+              className="hidden sm:flex"
+              onClick={() => {
+                toggleCreateIssueModal(true, EIssuesStoreType.MODULE);
+              }}
+            >
+              Add work item
+            </Button>
           ) : (
             <></>
           )}
-          <IconButton
-            variant="tertiary"
-            size="lg"
-            icon={RightSidePaneOutline}
-            onClick={toggleSidebar}
-            className={cn({
-              "bg-accent-subtle text-accent-primary": !isSidebarCollapsed,
-            })}
-          />
           {moduleId && (
             <ModuleQuickActions
               parentRef={parentRef}

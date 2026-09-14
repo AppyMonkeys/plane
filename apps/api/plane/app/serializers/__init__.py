@@ -120,8 +120,6 @@ from .intake import (
     IntakeIssueDetailSerializer,
 )
 
-from .analytic import AnalyticViewSerializer
-
 from .notification import (
     NotificationSerializer,
     UserNotificationPreferenceSerializer,

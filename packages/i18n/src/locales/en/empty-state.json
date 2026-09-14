@@ -153,21 +153,6 @@
       "title": "No projects archived",
       "description": "Looks like all your projects are still active—great job!"
     },
-    "analytics_projects": {
-      "title": "Create projects to visualize project metrics here."
-    },
-    "analytics_work_items": {
-      "title": "Create projects with work items and assignees to start tracking performance, progress, and team impact here."
-    },
-    "analytics_no_cycle": {
-      "title": "Create cycles to organise work into time-bound phases and track progress across sprints."
-    },
-    "analytics_no_module": {
-      "title": "Create modules to organize your work and track progress across different stages."
-    },
-    "analytics_no_intake": {
-      "title": "Set up intake to manage incoming requests and track how they're accepted and rejected"
-    },
     "home_widget_stickies": {
       "title": "Jot down an idea, capture an aha, or record a brainwave. Add a sticky to get started."
     },
