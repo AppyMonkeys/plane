@@ -1,0 +1,24 @@
+{
+  "jira": {
+    "base_url": "https://appymonkeys.atlassian.net",
+    "email": "kc@appymonkeys.com",
+    "api_token": "ATATT3xFfGF0XbQfJM8hE3yc6LB9_Grjnjbr3ukV3pgchT9C51IxuO3U3LZlAoYmqh-i4NpBD-ErROBXImJXfKmhavRvWyEa6DlrOZoOWlq_ocqS05mYoVhVbid85ISq4ZElJ_LmpJEj2GuIErs095l6GHBQXyHB8HubjfAOduvO7ryfs3-pqKQ=A2E733E6"
+  },
+  "plane": {
+    "workspace_slug": "lokko",
+    "project_identifier": "LOKKO"
+  },
+  "minio": {
+    "endpoint_url": "http://plane-minio:9000",
+    "access_key": "access-key",
+    "secret_key": "secret-key",
+    "bucket": "uploads"
+  },
+  "csv_path": "Jira_Lokko_export_csv.csv",
+  "issue_external_source": "jira_csv_import",
+  "attachment_external_source": "jira_attachment_import",
+  "max_file_size_bytes": 400000000,
+  "request_delay_seconds": 0.3,
+  "progress_file": "jira_attachments_progress.json",
+  "max_tickets": 0
+}
