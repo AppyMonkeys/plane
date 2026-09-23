@@ -274,30 +274,10 @@ services:
       - admin
       - live
 
-  # Backups: streams a pg_dump of plane-db and a tar of the uploads volume
-  # straight to S3 on an interval, pruning old copies. Falls back to local
-  # ./backup/<timestamp>/ storage if S3_BACKUP_BUCKET is unset. See
-  # backup-scripts/README.md for the full story.
-  backup:
-    image: postgres:15.7-alpine
-    depends_on:
-      - plane-db
-    environment:
-      PGHOST: ${PGHOST:-plane-db}
-      POSTGRES_USER: ${POSTGRES_USER:-plane}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-plane}
-      POSTGRES_DB: ${POSTGRES_DB:-plane}
-      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-18000}
-      BACKUP_KEEP: ${BACKUP_KEEP:-2}
-      S3_BACKUP_BUCKET: ${S3_BACKUP_BUCKET:-}
-      S3_BACKUP_PREFIX: ${S3_BACKUP_PREFIX:-plane}
-      S3_BACKUP_KEEP: ${S3_BACKUP_KEEP:-3}
-    entrypoint: ["sh", "/backup.sh"]
-    restart: unless-stopped
-    volumes:
-      - ./backup:/backup
-      - uploads:/source_storage:ro
-      - ./backup-scripts/backup.sh:/backup.sh:ro
+  # Backups run on a host cron job (backup-scripts/run-backup.sh), not as a
+  # compose service -- it stops this stack (except plane-db), streams a
+  # pg_dump + a tar of the uploads volume straight to S3, then restarts
+  # every service one at a time. See backup-scripts/README.md.
 
 volumes:
   pgdata:
