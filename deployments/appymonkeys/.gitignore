@@ -1,0 +1,8 @@
+# Real secrets -- copy .env.example instead. (Also covered by the repo's
+# top-level .gitignore, but kept here too since this dir may be used
+# standalone.)
+.env
+
+# Local-fallback backup output (only written when S3_BACKUP_BUCKET is
+# unset) -- never commit backup data or the failure log.
+backup/
