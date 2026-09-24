@@ -45,12 +45,15 @@ That's the whole thing. `docker compose ps` shows every container;
 - **`APP_DOMAIN`** is whatever hostname/IP this instance is reachable at.
   For a cloud VM, that's its public DNS name or IP; for local dev, your
   LAN IP or `localhost`.
-- **TLS**: the bundled `proxy` service (Caddy) can auto-issue a Let's
-  Encrypt cert if you set `CERT_EMAIL` in `.env` and your domain resolves
-  publicly with port 80 reachable. Leaving `CERT_EMAIL` empty and
-  `SITE_ADDRESS=:80` (the default) runs plain HTTP on
-  `LISTEN_HTTP_PORT` -- simplest option for a box that isn't (yet) behind
-  a real domain.
+- **TLS**: `proxy` no longer publishes any host port on its own -- see
+  **[edge-proxy/README.md](edge-proxy/README.md)**. It's a separate
+  shared Caddy container that terminates TLS (Let's Encrypt) for the
+  whole host and reverse-proxies to `proxy` (and, on this deployment, to
+  docmost as well, at `/docmost`). Bring it up after this stack:
+  `cd edge-proxy && docker compose up -d`. TLS matters for more than
+  cosmetics here -- Plane's PWA install/offline support
+  (`apps/web/public/sw.js`) needs a secure context to register its
+  service worker at all; it silently does nothing over plain HTTP.
 - **`CUSTOM_BUILD`**: this compose file always builds from source
   regardless of this flag (kept only because some Dockerfiles reference
   it); there's no prebuilt-image mode here.

@@ -1,0 +1,40 @@
+# Shared HTTPS front door for this host, sitting in front of both the
+# Plane stack (deployments/appymonkeys/docker-compose.yaml, project
+# "plane-app") and docmost (~/docmost/docker-compose.yml, project
+# "docmost"). Neither of those publishes host ports 80/443 anymore -- this
+# is the only thing that does, so it can own Let's Encrypt's ACME
+# challenge and TLS termination for the single shared hostname, then
+# reverse-proxy to each app over their own docker networks.
+#
+# Bring up AFTER both `plane-app` and `docmost` projects exist (it joins
+# their networks by name, external: true below), and re-run this file
+# any time either project's network needs to be (re)joined:
+#   docker compose -f edge-proxy/docker-compose.yaml up -d
+name: edge-proxy
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - plane-app_default
+      - docmost_default
+
+networks:
+  plane-app_default:
+    external: true
+  docmost_default:
+    external: true
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,14 @@
+# Shared HTTPS front door for this host: terminates TLS (Let's Encrypt,
+# auto-issued for {$APP_DOMAIN}) and fans out to whichever app owns each
+# path. Everything except /docmost goes to Plane's own internal proxy
+# (which does its own path routing to web/api/space/admin/live) -- this
+# Caddyfile doesn't duplicate that routing, just sits in front of it.
+{$APP_DOMAIN} {
+	handle_path /docmost* {
+		reverse_proxy docmost-docmost-1:3000
+	}
+
+	handle {
+		reverse_proxy plane-app-proxy-1:80
+	}
+}

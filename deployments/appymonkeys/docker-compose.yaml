@@ -248,6 +248,11 @@ services:
       - uploads:/export
 
   # Comment this if you already have a reverse proxy running
+  # No host ports published: edge-proxy/ is the single thing that binds
+  # 80/443 on this host, terminates TLS, and reverse-proxies to this
+  # service's internal port 80 (see edge-proxy/Caddyfile). Run
+  # `docker compose -f edge-proxy/docker-compose.yaml up -d` alongside
+  # this stack -- Plane isn't reachable from outside the host without it.
   proxy:
     image: makeplane/plane-proxy:${APP_RELEASE:-v1.4.2}
     restart: unless-stopped
@@ -255,15 +260,6 @@ services:
       replicas: 1
     environment:
       <<: *proxy-env
-    ports:
-      - target: 80
-        published: ${LISTEN_HTTP_PORT:-80}
-        protocol: tcp
-        mode: host
-      - target: 443
-        published: ${LISTEN_HTTPS_PORT:-443}
-        protocol: tcp
-        mode: host
     volumes:
       - proxy_config:/config
       - proxy_data:/data
