@@ -23,10 +23,17 @@ x-minio-env: &minio-env
 
 x-aws-s3-env: &aws-s3-env
   AWS_REGION: ${AWS_REGION:-}
-  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-access-key}
-  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-secret-key}
-  AWS_S3_ENDPOINT_URL: ${AWS_S3_ENDPOINT_URL:-http://plane-minio:9000}
+  # Leave AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY unset in .env to use the EC2
+  # instance role instead (same as backup-scripts/run-backup.sh) -- plane/settings/
+  # storage.py treats an empty value here as "not provided" and falls through to
+  # boto3's default credential chain (env -> ~/.aws/credentials -> IMDS role).
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  AWS_S3_ENDPOINT_URL: ${AWS_S3_ENDPOINT_URL:-}
   AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+  # Optional "folder" prefix within the bucket -- lets this share a bucket (e.g.
+  # one already used for backups) without its keys colliding with anything else.
+  AWS_S3_KEY_PREFIX: ${AWS_S3_KEY_PREFIX:-}
 
 x-proxy-env: &proxy-env
   APP_DOMAIN: ${APP_DOMAIN:-localhost}
@@ -235,17 +242,20 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
-  # Comment this if you using any external s3 compatible storage
-  plane-minio:
-    image: quay.io/minio/minio:latest
-    command: server /export --console-address ":9090"
-    restart: unless-stopped
-    deploy:
-      replicas: 1
-    environment:
-      <<: *minio-env
-    volumes:
-      - uploads:/export
+  # Replaced by real S3 (see AWS_S3_* in .env, and storage.py's IAM-role
+  # fallback) -- kept here, commented, in case of rollback. The old `uploads`
+  # named volume is left declared below (untouched, not deleted) as the
+  # rollback's data.
+  # plane-minio:
+  #   image: quay.io/minio/minio:latest
+  #   command: server /export --console-address ":9090"
+  #   restart: unless-stopped
+  #   deploy:
+  #     replicas: 1
+  #   environment:
+  #     <<: *minio-env
+  #   volumes:
+  #     - uploads:/export
 
   # Comment this if you already have a reverse proxy running
   # No host ports published: edge-proxy/ is the single thing that binds

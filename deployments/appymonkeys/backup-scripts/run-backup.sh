@@ -58,11 +58,18 @@ DB_USER=$(docker exec "$DB_CONTAINER" printenv POSTGRES_USER)
 DB_NAME=$(docker exec "$DB_CONTAINER" printenv POSTGRES_DB)
 DB_PASSWORD=$(docker exec "$DB_CONTAINER" printenv POSTGRES_PASSWORD)
 
-MINIO_CONTAINER=$($COMPOSE ps -q plane-minio)
-STORAGE_VOLUME=$(docker inspect "$MINIO_CONTAINER" --format '{{ range .Mounts }}{{ if eq .Destination "/export" }}{{ .Name }}{{ end }}{{ end }}')
-if [ -z "$STORAGE_VOLUME" ]; then
-  echo "[backup] could not resolve the uploads volume from plane-minio's mounts." >&2
-  exit 1
+# plane-minio is optional -- when uploads live in real S3 instead (see
+# AWS_S3_* in .env), there's no local uploads volume to back up at all, and
+# S3 durability is already AWS's job. Only try to resolve it if the service
+# is actually defined in docker-compose.yaml.
+STORAGE_VOLUME=""
+if $COMPOSE config --services 2>/dev/null | grep -qx plane-minio; then
+  MINIO_CONTAINER=$($COMPOSE ps -q plane-minio)
+  STORAGE_VOLUME=$(docker inspect "$MINIO_CONTAINER" --format '{{ range .Mounts }}{{ if eq .Destination "/export" }}{{ .Name }}{{ end }}{{ end }}' 2>/dev/null)
+  if [ -z "$STORAGE_VOLUME" ]; then
+    echo "[backup] could not resolve the uploads volume from plane-minio's mounts." >&2
+    exit 1
+  fi
 fi
 
 ts=$(date +%Y-%m-%d_%H-%M-%S)
@@ -72,10 +79,15 @@ log_failure() {
 }
 
 # Everything except plane-db. plane-redis/plane-mq included too, so the
-# box is as idle as possible for the dump+tar+upload window.
-STOP_SERVICES="web space admin live api worker beat-worker proxy plane-minio plane-redis plane-mq"
-# Restart order: dependencies first.
-START_ORDER="plane-redis plane-mq plane-minio api worker beat-worker web admin space live proxy"
+# box is as idle as possible for the dump+tar+upload window. plane-minio only
+# included if it's actually defined (see STORAGE_VOLUME above) -- listing a
+# service docker-compose.yaml doesn't define would fail the whole stop/start.
+STOP_SERVICES="web space admin live api worker beat-worker proxy plane-redis plane-mq"
+START_ORDER="plane-redis plane-mq api worker beat-worker web admin space live proxy"
+if [ -n "$STORAGE_VOLUME" ]; then
+  STOP_SERVICES="$STOP_SERVICES plane-minio"
+  START_ORDER="plane-redis plane-mq plane-minio api worker beat-worker web admin space live proxy"
+fi
 
 echo "[backup] $(date -Iseconds) starting backup ${ts} -- stopping app services"
 $COMPOSE stop $STOP_SERVICES
@@ -97,23 +109,28 @@ else
   log_failure "plane.dump" "pg_dump rc=${db_pg_rc}: $(tail -c 500 "$work_dir/db_pg.err" 2>/dev/null | tr '\n' ' '); s3 rc=${db_s3_rc}: $(tail -c 500 "$work_dir/db_s3.err" 2>/dev/null | tr '\n' ' ')"
 fi
 
-echo "[backup] $(date -Iseconds) archiving uploads (plane-minio is stopped, reading the volume directly)..."
-{ docker run --rm -v "$STORAGE_VOLUME":/source_storage:ro alpine tar -cf - -C /source_storage . 2>"$work_dir/storage_tar.err"; echo $? > "$work_dir/storage_tar.rc"; } \
-  | aws s3 cp - "s3://${S3_BUCKET}/${S3_PREFIX}/${ts}/uploads.tar" 2>"$work_dir/storage_s3.err"
-storage_s3_rc=$?
-tar_rc=$(cat "$work_dir/storage_tar.rc" 2>/dev/null || echo 1)
+storage_ok=1
+if [ -n "$STORAGE_VOLUME" ]; then
+  echo "[backup] $(date -Iseconds) archiving uploads (plane-minio is stopped, reading the volume directly)..."
+  { docker run --rm -v "$STORAGE_VOLUME":/source_storage:ro alpine tar -cf - -C /source_storage . 2>"$work_dir/storage_tar.err"; echo $? > "$work_dir/storage_tar.rc"; } \
+    | aws s3 cp - "s3://${S3_BUCKET}/${S3_PREFIX}/${ts}/uploads.tar" 2>"$work_dir/storage_s3.err"
+  storage_s3_rc=$?
+  tar_rc=$(cat "$work_dir/storage_tar.rc" 2>/dev/null || echo 1)
 
-# tar rc 0 = clean, 1 = non-fatal ("file changed as we read it"). Not
-# retried here (unlike the old always-on loop) -- plane-minio is stopped
-# and nothing else has the volume mounted read-write, so there's nothing
-# to race against; a rc=1 would mean something unexpected touched it.
-storage_ok=0
-if [ "$storage_s3_rc" -eq 0 ] && [ "$tar_rc" -le 1 ]; then
-  storage_ok=1
-  echo "[backup] $(date -Iseconds) storage archive streamed to S3 OK"
+  # tar rc 0 = clean, 1 = non-fatal ("file changed as we read it"). Not
+  # retried here (unlike the old always-on loop) -- plane-minio is stopped
+  # and nothing else has the volume mounted read-write, so there's nothing
+  # to race against; a rc=1 would mean something unexpected touched it.
+  storage_ok=0
+  if [ "$storage_s3_rc" -eq 0 ] && [ "$tar_rc" -le 1 ]; then
+    storage_ok=1
+    echo "[backup] $(date -Iseconds) storage archive streamed to S3 OK"
+  else
+    echo "[backup] $(date -Iseconds) storage archive/upload FAILED (tar rc=$tar_rc, s3 rc=$storage_s3_rc)" >&2
+    log_failure "uploads.tar" "tar rc=${tar_rc}: $(tail -c 500 "$work_dir/storage_tar.err" 2>/dev/null | tr '\n' ' '); s3 rc=${storage_s3_rc}: $(tail -c 500 "$work_dir/storage_s3.err" 2>/dev/null | tr '\n' ' ')"
+  fi
 else
-  echo "[backup] $(date -Iseconds) storage archive/upload FAILED (tar rc=$tar_rc, s3 rc=$storage_s3_rc)" >&2
-  log_failure "uploads.tar" "tar rc=${tar_rc}: $(tail -c 500 "$work_dir/storage_tar.err" 2>/dev/null | tr '\n' ' '); s3 rc=${storage_s3_rc}: $(tail -c 500 "$work_dir/storage_s3.err" 2>/dev/null | tr '\n' ' ')"
+  echo "[backup] $(date -Iseconds) skipping uploads archive -- no plane-minio volume (uploads live in real S3, already durable)"
 fi
 
 rm -rf "$work_dir"

@@ -23,16 +23,23 @@ class S3Storage(S3Boto3Storage):
     """S3 storage class to generate presigned URLs for S3 objects"""
 
     def __init__(self, request=None):
-        # Get the AWS credentials and bucket name from the environment
-        self.aws_access_key_id = os.environ.get("AWS_ACCESS_KEY_ID")
+        # Get the AWS credentials and bucket name from the environment.
+        # Explicit "" (rather than None) would make boto3 try to authenticate with an
+        # empty static key instead of falling through to its default credential chain
+        # (env vars, ~/.aws/credentials, then the EC2 instance role via IMDS) -- so an
+        # empty value here is normalized to None to allow that fallback to work.
+        self.aws_access_key_id = os.environ.get("AWS_ACCESS_KEY_ID") or None
         # Use the AWS_SECRET_ACCESS_KEY environment variable for the secret key
-        self.aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+        self.aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY") or None
         # Use the AWS_S3_BUCKET_NAME environment variable for the bucket name
         self.aws_storage_bucket_name = os.environ.get("AWS_S3_BUCKET_NAME")
         # Use the AWS_REGION environment variable for the region
         self.aws_region = os.environ.get("AWS_REGION")
         # Use the AWS_S3_ENDPOINT_URL environment variable for the endpoint URL
         self.aws_s3_endpoint_url = os.environ.get("AWS_S3_ENDPOINT_URL") or os.environ.get("MINIO_ENDPOINT_URL")
+        # Optional key prefix ("folder") within the bucket, e.g. to share one bucket
+        # across multiple environments/apps without their object keys colliding.
+        self.aws_s3_key_prefix = (os.environ.get("AWS_S3_KEY_PREFIX") or "").strip("/")
         # Use the SIGNED_URL_EXPIRATION environment variable for the expiration time (default: 3600 seconds)
         self.signed_url_expiration = int(os.environ.get("SIGNED_URL_EXPIRATION", "3600"))
 
@@ -62,8 +69,20 @@ class S3Storage(S3Boto3Storage):
                 config=boto3.session.Config(signature_version="s3v4"),
             )
 
+    def _prefixed_key(self, object_name):
+        """Prepend the configured AWS_S3_KEY_PREFIX "folder" to an object key, if set.
+
+        The prefix is applied transparently here, at the only place object keys reach
+        S3 -- callers (and the DB, which stores FileAsset.asset) keep working with the
+        unprefixed key, so this is safe to turn on/off without touching them.
+        """
+        if not self.aws_s3_key_prefix:
+            return object_name
+        return f"{self.aws_s3_key_prefix}/{object_name}"
+
     def generate_presigned_post(self, object_name, file_type, file_size, expiration=None):
         """Generate a presigned URL to upload an S3 object"""
+        object_name = self._prefixed_key(object_name)
         if expiration is None:
             expiration = self.signed_url_expiration
         fields = {"Content-Type": file_type}
@@ -126,7 +145,7 @@ class S3Storage(S3Boto3Storage):
                 "get_object",
                 Params={
                     "Bucket": self.aws_storage_bucket_name,
-                    "Key": str(object_name),
+                    "Key": self._prefixed_key(str(object_name)),
                     "ResponseContentDisposition": content_disposition,
                 },
                 ExpiresIn=expiration,
@@ -142,7 +161,9 @@ class S3Storage(S3Boto3Storage):
     def get_object_metadata(self, object_name):
         """Get the metadata for an S3 object"""
         try:
-            response = self.s3_client.head_object(Bucket=self.aws_storage_bucket_name, Key=object_name)
+            response = self.s3_client.head_object(
+                Bucket=self.aws_storage_bucket_name, Key=self._prefixed_key(object_name)
+            )
         except ClientError as e:
             log_exception(e)
             return None
@@ -160,8 +181,8 @@ class S3Storage(S3Boto3Storage):
         try:
             response = self.s3_client.copy_object(
                 Bucket=self.aws_storage_bucket_name,
-                CopySource={"Bucket": self.aws_storage_bucket_name, "Key": object_name},
-                Key=new_object_name,
+                CopySource={"Bucket": self.aws_storage_bucket_name, "Key": self._prefixed_key(object_name)},
+                Key=self._prefixed_key(new_object_name),
             )
         except ClientError as e:
             log_exception(e)
@@ -184,7 +205,7 @@ class S3Storage(S3Boto3Storage):
             self.s3_client.upload_fileobj(
                 file_obj,
                 self.aws_storage_bucket_name,
-                object_name,
+                self._prefixed_key(object_name),
                 ExtraArgs=extra_args,
             )
             return True
@@ -197,7 +218,7 @@ class S3Storage(S3Boto3Storage):
         try:
             self.s3_client.delete_objects(
                 Bucket=self.aws_storage_bucket_name,
-                Delete={"Objects": [{"Key": object_name} for object_name in object_names]},
+                Delete={"Objects": [{"Key": self._prefixed_key(object_name)} for object_name in object_names]},
             )
             return True
         except ClientError as e:
