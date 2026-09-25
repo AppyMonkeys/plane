@@ -3,8 +3,9 @@
 # "plane-app") and docmost (~/docmost/docker-compose.yml, project
 # "docmost"). Neither of those publishes host ports 80/443 anymore -- this
 # is the only thing that does, so it can own Let's Encrypt's ACME
-# challenge and TLS termination for the single shared hostname, then
-# reverse-proxy to each app over their own docker networks.
+# challenges and TLS termination for both PLANE_DOMAIN and DOCMOST_DOMAIN
+# (each its own subdomain, its own cert), then reverse-proxy to each app
+# over their own docker networks.
 #
 # Bring up AFTER both `plane-app` and `docmost` projects exist (it joins
 # their networks by name, external: true below), and re-run this file
@@ -17,7 +18,8 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     environment:
-      APP_DOMAIN: ${APP_DOMAIN}
+      PLANE_DOMAIN: ${APP_DOMAIN}
+      DOCMOST_DOMAIN: ${DOCMOST_DOMAIN}
     ports:
       - "80:80"
       - "443:443"
