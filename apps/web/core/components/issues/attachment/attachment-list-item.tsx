@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+import { useState } from "react";
 import { observer } from "mobx-react";
 
 import { useTranslation } from "@plane/i18n";
@@ -18,6 +19,10 @@ import { convertBytesToSize, getFileExtension, getFileName, getFileURL, renderFo
 //
 import { ButtonAvatars } from "@/components/dropdowns/member/avatar";
 import { getFileIcon } from "@/components/icons";
+import {
+  AttachmentPreviewModal,
+  isPreviewableAttachment,
+} from "@/components/issues/attachment/attachment-preview-modal";
 // helpers
 // hooks
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
@@ -48,16 +53,29 @@ export const IssueAttachmentsListItem = observer(function IssueAttachmentsListIt
   const fileURL = getFileURL(attachment?.asset_url ?? "");
   // hooks
   const { isMobile } = usePlatformOS();
+  // states
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   if (!attachment) return <></>;
 
   return (
     <>
+      <AttachmentPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        fileURL={fileURL ?? ""}
+        fileName={`${fileName}.${fileExtension}`}
+        fileExtension={fileExtension}
+      />
       <button
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          window.open(fileURL, "_blank");
+          if (isPreviewableAttachment(fileExtension)) {
+            setIsPreviewOpen(true);
+          } else {
+            window.open(fileURL, "_blank");
+          }
         }}
       >
         <div className="group flex h-11 items-center justify-between gap-3 px-3 hover:bg-surface-2">
