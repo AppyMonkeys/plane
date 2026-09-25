@@ -73,6 +73,24 @@ docker compose up -d <service>   # recreate just that container
 A plain `docker compose up -d` with no `build` reuses whatever images were
 already built -- it does **not** pick up source changes on its own.
 
+### Deploying to a memory-constrained host
+
+`docker compose build && docker compose up -d --build` builds/restarts
+everything at once -- fine on a beefy machine, but this has OOM-killed the
+stack before on a small box (2 vCPU / ~4GB is what this was developed
+against). **`deploy-scripts/deploy.sh <branch>`** does the same end result one
+service at a time instead, pausing and checking free memory between every
+build and every restart:
+
+```bash
+cd deployments/appymonkeys
+./deploy-scripts/deploy.sh preview   # pull, build each app one at a time, migrate, restart one at a time
+```
+
+See the `deploy-plane` Claude Code skill (`.claude/skills/deploy-plane/`)
+for the full checklist around this (backup first, verify after) when an
+agent is doing the deploy.
+
 ## Backups and restore
 
 See **[backup-scripts/README.md](backup-scripts/README.md)** for the full
