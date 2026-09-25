@@ -79,11 +79,14 @@ Then:
    cd ~/plane/deployments/appymonkeys && docker compose up -d api worker proxy
    ```
 
-5. **Bring up edge-proxy:**
+5. **Bring up edge-proxy** (symlinking `.env` once means every future
+   `docker compose` command here picks it up automatically, no
+   `--env-file` flag to remember):
 
    ```bash
    cd ~/plane/deployments/appymonkeys/edge-proxy
-   docker compose --env-file ../.env up -d
+   ln -sf ../.env .env
+   docker compose up -d
    ```
 
    First start takes a few seconds while Caddy requests both Let's
