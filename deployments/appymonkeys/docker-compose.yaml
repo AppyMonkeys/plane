@@ -95,6 +95,12 @@ services:
     build:
       context: ../..
       dockerfile: ./apps/web/Dockerfile.web
+      # Build-time UI flags (set in .env; see apps/web/.env.example). Changing
+      # one needs a rebuild of web, not just a restart.
+      args:
+        VITE_HIDE_CYCLES_MODULES: ${VITE_HIDE_CYCLES_MODULES:-}
+        VITE_JIRA_TERMINOLOGY: ${VITE_JIRA_TERMINOLOGY:-}
+        VITE_JIRA_PRIORITY: ${VITE_JIRA_PRIORITY:-}
     image: plane-frontend:local
     mem_limit: ${WEB_MEM_LIMIT:-128m}
     restart: unless-stopped

@@ -68,13 +68,22 @@ function BorderButton(props: ButtonProps) {
 
   const priorityDetails = ISSUE_PRIORITIES.find((p) => p.key === priority);
 
-  const priorityClasses = {
-    urgent: "bg-layer-2 border-priority-urgent px-1",
-    high: "bg-layer-2 border-priority-high",
-    medium: "bg-layer-2 border-priority-medium",
-    low: "bg-layer-2 border-priority-low",
-    none: "bg-layer-2 border-strong",
-  };
+  // Jira mode: neutral border like the other property buttons; only the arrow icon is colored
+  const priorityClasses = IS_JIRA_PRIORITY_ENABLED
+    ? {
+        urgent: "border-strong",
+        high: "border-strong",
+        medium: "border-strong",
+        low: "border-strong",
+        none: "border-strong",
+      }
+    : {
+        urgent: "bg-layer-2 border-priority-urgent px-1",
+        high: "bg-layer-2 border-priority-high",
+        medium: "bg-layer-2 border-priority-medium",
+        low: "bg-layer-2 border-priority-low",
+        none: "bg-layer-2 border-strong",
+      };
 
   const { isMobile } = usePlatformOS();
   const { t } = useTranslation();
@@ -89,6 +98,7 @@ function BorderButton(props: ButtonProps) {
           "flex h-full items-center gap-1.5 rounded-sm border-[0.5px] px-2 py-0.5",
           priorityClasses[priority ?? "none"],
           {
+            "hover:bg-layer-transparent-hover": IS_JIRA_PRIORITY_ENABLED,
             // compact the icons if text is hidden
             "px-0.5": hideText,
             // highlight the whole button if text is hidden and priority is urgent
