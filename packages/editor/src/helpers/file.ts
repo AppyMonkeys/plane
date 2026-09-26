@@ -14,11 +14,13 @@ type TArgs = {
   acceptedMimeTypes: string[];
   file: File;
   maxFileSize: number;
+  // overrides maxFileSize for files whose mime type starts with "video/"
+  maxVideoFileSize?: number;
   onError: (error: EFileError, message: string) => void;
 };
 
 export const isFileValid = (args: TArgs): boolean => {
-  const { acceptedMimeTypes, file, maxFileSize, onError } = args;
+  const { acceptedMimeTypes, file, maxFileSize, maxVideoFileSize, onError } = args;
 
   if (!file) {
     onError(EFileError.NO_FILE_SELECTED, "No file selected. Please select a file to upload.");
@@ -30,10 +32,12 @@ export const isFileValid = (args: TArgs): boolean => {
     return false;
   }
 
-  if (file.size > maxFileSize) {
+  const effectiveMaxFileSize = file.type.startsWith("video/") && maxVideoFileSize ? maxVideoFileSize : maxFileSize;
+
+  if (file.size > effectiveMaxFileSize) {
     onError(
       EFileError.FILE_SIZE_TOO_LARGE,
-      `File size too large. Please select a file smaller than ${maxFileSize / 1024 / 1024}MB.`
+      `File size too large. Please select a file smaller than ${effectiveMaxFileSize / 1024 / 1024}MB.`
     );
     return false;
   }

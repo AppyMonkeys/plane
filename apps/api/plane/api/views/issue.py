@@ -79,6 +79,7 @@ from plane.db.models import (
     Workspace,
 )
 from plane.settings.storage import S3Storage
+from plane.utils.file_size import get_max_file_size
 from plane.utils.path_validator import sanitize_filename
 from plane.utils.order_queryset import (
     ACTIVITY_ORDER_BY_ALLOWLIST,
@@ -1913,7 +1914,7 @@ class IssueAttachmentListCreateAPIEndpoint(BaseAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        size_limit = min(size, settings.FILE_SIZE_LIMIT)
+        size_limit = min(size, get_max_file_size(type))
 
         if not type or type not in settings.ATTACHMENT_MIME_TYPES:
             return Response(

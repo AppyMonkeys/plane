@@ -21,6 +21,7 @@ type TUploaderArgs = {
   handleProgressStatus?: (isUploading: boolean) => void;
   loadFileFromFileSystem?: (file: string) => void;
   maxFileSize: number;
+  maxVideoFileSize?: number;
   onInvalidFile: (error: EFileError, file: File, message: string) => void;
   onUpload: (url: string, file: File) => void;
 };
@@ -32,6 +33,7 @@ export const useUploader = (args: TUploaderArgs) => {
     handleProgressStatus,
     loadFileFromFileSystem,
     maxFileSize,
+    maxVideoFileSize,
     onInvalidFile,
     onUpload,
   } = args;
@@ -46,6 +48,7 @@ export const useUploader = (args: TUploaderArgs) => {
         acceptedMimeTypes,
         file,
         maxFileSize,
+        maxVideoFileSize,
         onError: (error, message) => onInvalidFile(error, file, message),
       });
       if (!isValid) {
@@ -56,16 +59,16 @@ export const useUploader = (args: TUploaderArgs) => {
       try {
         if (loadFileFromFileSystem) {
           const reader = new FileReader();
-          reader.onload = () => {
+          reader.addEventListener("load", () => {
             if (reader.result) {
               loadFileFromFileSystem(reader.result as string);
             } else {
               console.error("Failed to read the file: reader.result is null");
             }
-          };
-          reader.onerror = () => {
+          });
+          reader.addEventListener("error", () => {
             console.error("Error reading file");
-          };
+          });
           reader.readAsDataURL(file);
         }
         const url = await editorCommand(file);
@@ -87,6 +90,7 @@ export const useUploader = (args: TUploaderArgs) => {
       handleProgressStatus,
       loadFileFromFileSystem,
       maxFileSize,
+      maxVideoFileSize,
       onInvalidFile,
       onUpload,
     ]

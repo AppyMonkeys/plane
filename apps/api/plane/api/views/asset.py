@@ -45,6 +45,7 @@ from plane.utils.openapi import (
     asset_docs,
 )
 from plane.utils.exception_logger import log_exception
+from plane.utils.file_size import get_max_file_size
 
 
 class UserAssetEndpoint(BaseAPIView):
@@ -530,7 +531,7 @@ class GenericAssetEndpoint(BaseAPIView):
             )
 
         # Check if the file size is within the limit
-        size_limit = min(size, settings.FILE_SIZE_LIMIT)
+        size_limit = min(size, get_max_file_size(type))
 
         # Check if the file type is allowed
         if not type or type not in settings.ATTACHMENT_MIME_TYPES:

@@ -140,6 +140,7 @@ class InstanceEndpoint(BaseAPIView):
 
         # File size settings
         data["file_size_limit"] = float(os.environ.get("FILE_SIZE_LIMIT", 5242880))
+        data["video_file_size_limit"] = float(os.environ.get("VIDEO_FILE_SIZE_LIMIT", 10485760))
 
         # is smtp configured
         data["is_smtp_configured"] = bool(EMAIL_HOST)

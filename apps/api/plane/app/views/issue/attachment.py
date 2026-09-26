@@ -24,6 +24,7 @@ from plane.db.models import FileAsset, Workspace
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.app.permissions import allow_permission, ROLE
 from plane.settings.storage import S3Storage
+from plane.utils.file_size import get_max_file_size
 from plane.utils.path_validator import sanitize_filename
 from plane.bgtasks.storage_metadata_task import get_asset_object_metadata
 from plane.utils.host import base_host
@@ -115,7 +116,7 @@ class IssueAttachmentV2Endpoint(BaseAPIView):
         asset_key = f"{workspace.id}/{uuid.uuid4().hex}-{name}"
 
         # Get the size limit
-        size_limit = min(size, settings.FILE_SIZE_LIMIT)
+        size_limit = min(size, get_max_file_size(type))
 
         # Create a File Asset
         asset = FileAsset.objects.create(

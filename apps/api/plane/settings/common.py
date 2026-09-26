@@ -350,6 +350,7 @@ CELERY_IMPORTS = (
 )
 
 FILE_SIZE_LIMIT = int(os.environ.get("FILE_SIZE_LIMIT", 5242880))
+VIDEO_FILE_SIZE_LIMIT = int(os.environ.get("VIDEO_FILE_SIZE_LIMIT", 10485760))
 
 # Unsplash Access key
 UNSPLASH_ACCESS_KEY = os.environ.get("UNSPLASH_ACCESS_KEY")
@@ -363,7 +364,7 @@ ANALYTICS_BASE_API = os.environ.get("ANALYTICS_BASE_API", False)
 # Skip environment variable configuration
 SKIP_ENV_VAR = os.environ.get("SKIP_ENV_VAR", "1") == "1"
 
-DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get("FILE_SIZE_LIMIT", 5242880))
+DATA_UPLOAD_MAX_MEMORY_SIZE = max(FILE_SIZE_LIMIT, VIDEO_FILE_SIZE_LIMIT)
 
 # Cookie Settings
 SESSION_COOKIE_SECURE = secure_origins

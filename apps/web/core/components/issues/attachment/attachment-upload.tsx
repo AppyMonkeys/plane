@@ -25,7 +25,7 @@ export const IssueAttachmentUpload = observer(function IssueAttachmentUpload(pro
   // states
   const [isLoading, setIsLoading] = useState(false);
   // file size
-  const { maxFileSize } = useFileSize();
+  const { maxFileSize, maxVideoFileSize } = useFileSize();
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -38,15 +38,30 @@ export const IssueAttachmentUpload = observer(function IssueAttachmentUpload(pro
     [attachmentOperations, workspaceSlug]
   );
 
+  const validator = useCallback(
+    (file: File) => {
+      const effectiveMaxSize = file.type.startsWith("video/") ? maxVideoFileSize : maxFileSize;
+      if (file.size > effectiveMaxSize) {
+        return {
+          code: "file-too-large",
+          message: `File is larger than ${effectiveMaxSize / 1024 / 1024} MB`,
+        };
+      }
+      return null;
+    },
+    [maxFileSize, maxVideoFileSize]
+  );
+
   const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections } = useDropzone({
     onDrop,
-    maxSize: maxFileSize,
+    maxSize: Math.max(maxFileSize, maxVideoFileSize),
+    validator,
     multiple: false,
     disabled: isLoading || disabled,
   });
 
   const fileError =
-    fileRejections.length > 0 ? `Invalid file type or size (max ${maxFileSize / 1024 / 1024} MB)` : null;
+    fileRejections.length > 0 ? (fileRejections[0].errors[0]?.message ?? "Invalid file type or size.") : null;
 
   return (
     <div

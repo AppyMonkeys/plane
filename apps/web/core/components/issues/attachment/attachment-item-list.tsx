@@ -57,7 +57,7 @@ export const IssueAttachmentItemList = observer(function IssueAttachmentItemList
   const { create: createAttachment } = attachmentOperations;
   const { uploadStatus } = attachmentSnapshot;
   // file size
-  const { maxFileSize } = useFileSize();
+  const { maxFileSize, maxVideoFileSize } = useFileSize();
   // derived values
   const issueAttachments = getAttachmentsByIssueId(issueId);
 
@@ -96,24 +96,41 @@ export const IssueAttachmentItemList = observer(function IssueAttachmentItemList
         message:
           totalAttachedFiles > 1
             ? t("attachment.only_one_file_allowed")
-            : t("attachment.file_size_limit", { size: maxFileSize / 1024 / 1024 }),
+            : t("attachment.file_size_limit", {
+                size: (rejectedFiles[0]?.file.type.startsWith("video/") ? maxVideoFileSize : maxFileSize) / 1024 / 1024,
+              }),
       });
       return;
     },
-    [createAttachment, maxFileSize, workspaceSlug, handleFetchPropertyActivities]
+    [createAttachment, maxFileSize, maxVideoFileSize, workspaceSlug, handleFetchPropertyActivities, t]
+  );
+
+  const validator = useCallback(
+    (file: File) => {
+      const effectiveMaxSize = file.type.startsWith("video/") ? maxVideoFileSize : maxFileSize;
+      if (file.size > effectiveMaxSize) {
+        return {
+          code: "file-too-large",
+          message: `File is larger than ${effectiveMaxSize / 1024 / 1024} MB`,
+        };
+      }
+      return null;
+    },
+    [maxFileSize, maxVideoFileSize]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    maxSize: maxFileSize,
+    maxSize: Math.max(maxFileSize, maxVideoFileSize),
+    validator,
     multiple: false,
     disabled: isUploading || disabled,
   });
 
   return (
     <>
-      {uploadStatus?.map((uploadStatus) => (
-        <IssueAttachmentsUploadItem key={uploadStatus.id} uploadStatus={uploadStatus} />
+      {uploadStatus?.map((status) => (
+        <IssueAttachmentsUploadItem key={status.id} uploadStatus={status} />
       ))}
       {issueAttachments && (
         <>
