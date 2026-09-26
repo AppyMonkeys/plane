@@ -80,6 +80,9 @@ x-app-env: &app-env
   # browse/generate against the real API surface instead of reading source.
   ENABLE_DRF_SPECTACULAR: ${ENABLE_DRF_SPECTACULAR:-1}
 
+# mem_limit on every service: a runaway container gets OOM-killed and
+# restarted on its own instead of freezing the whole (swap-backed, ~4GB) host.
+# Override any of them via *_MEM_LIMIT in .env.
 services:
   # web/space/admin/live/api/worker/beat-worker/migrator are built from this
   # repo (../.. from here -- the plane-src root) instead of pulling the
@@ -93,6 +96,7 @@ services:
       context: ../..
       dockerfile: ./apps/web/Dockerfile.web
     image: plane-frontend:local
+    mem_limit: ${WEB_MEM_LIMIT:-128m}
     restart: unless-stopped
     deploy:
       replicas: ${WEB_REPLICAS:-1}
@@ -105,6 +109,7 @@ services:
       context: ../..
       dockerfile: ./apps/space/Dockerfile.space
     image: plane-space:local
+    mem_limit: ${SPACE_MEM_LIMIT:-256m}
     restart: unless-stopped
     deploy:
       replicas: ${SPACE_REPLICAS:-1}
@@ -118,6 +123,7 @@ services:
       context: ../..
       dockerfile: ./apps/admin/Dockerfile.admin
     image: plane-admin:local
+    mem_limit: ${ADMIN_MEM_LIMIT:-128m}
     restart: unless-stopped
     deploy:
       replicas: ${ADMIN_REPLICAS:-1}
@@ -130,6 +136,7 @@ services:
       context: ../..
       dockerfile: ./apps/live/Dockerfile.live
     image: plane-live:local
+    mem_limit: ${LIVE_MEM_LIMIT:-384m}
     environment:
       <<: [*live-env, *redis-env]
     restart: unless-stopped
@@ -145,6 +152,7 @@ services:
       dockerfile: Dockerfile.api
     image: plane-backend:local
     command: ./bin/docker-entrypoint-api.sh
+    mem_limit: ${API_MEM_LIMIT:-768m}
     restart: unless-stopped
     deploy:
       replicas: ${API_REPLICAS:-1}
@@ -163,6 +171,7 @@ services:
       dockerfile: Dockerfile.api
     image: plane-backend:local
     command: ./bin/docker-entrypoint-worker.sh
+    mem_limit: ${WORKER_MEM_LIMIT:-768m}
     restart: unless-stopped
     deploy:
       replicas: ${WORKER_REPLICAS:-1}
@@ -170,6 +179,9 @@ services:
       - logs_worker:/code/plane/logs
     environment:
       <<: [*app-env, *db-env, *redis-env, *minio-env, *aws-s3-env, *proxy-env]
+      # Celery defaults to one prefork process per CPU, each loading all of
+      # Django; one is enough for this instance's background load.
+      CELERY_CONCURRENCY: ${CELERY_CONCURRENCY:-1}
     depends_on:
       - api
       - plane-db
@@ -182,6 +194,7 @@ services:
       dockerfile: Dockerfile.api
     image: plane-backend:local
     command: ./bin/docker-entrypoint-beat.sh
+    mem_limit: ${BEAT_WORKER_MEM_LIMIT:-384m}
     restart: unless-stopped
     deploy:
       replicas: ${BEAT_WORKER_REPLICAS:-1}
@@ -201,6 +214,7 @@ services:
       dockerfile: Dockerfile.api
     image: plane-backend:local
     command: ./bin/docker-entrypoint-migrator.sh
+    mem_limit: ${MIGRATOR_MEM_LIMIT:-768m}
     restart: on-failure
     deploy:
       replicas: 1
@@ -215,7 +229,10 @@ services:
   # Comment this if you already have a database running
   plane-db:
     image: postgres:15.7-alpine
-    command: postgres -c 'max_connections=1000'
+    # Django closes its connection after each request (no CONN_MAX_AGE), and
+    # this stack runs 1 gunicorn worker + 1 celery process, so 100 is plenty.
+    command: postgres -c 'max_connections=${POSTGRES_MAX_CONNECTIONS:-100}'
+    mem_limit: ${DB_MEM_LIMIT:-768m}
     restart: unless-stopped
     deploy:
       replicas: 1
@@ -226,6 +243,7 @@ services:
 
   plane-redis:
     image: valkey/valkey:7.2.11-alpine
+    mem_limit: ${REDIS_MEM_LIMIT:-256m}
     restart: unless-stopped
     deploy:
       replicas: 1
@@ -233,7 +251,11 @@ services:
       - redisdata:/data
 
   plane-mq:
-    image: rabbitmq:3.13.6-management-alpine
+    # Plain image, not -management: nothing uses the management UI/API, and
+    # its plugin + stats collection cost ~50-100MB. RabbitMQ sizes its memory
+    # alarm off this limit (40%), so don't set it much lower.
+    image: rabbitmq:3.13.6-alpine
+    mem_limit: ${MQ_MEM_LIMIT:-512m}
     restart: unless-stopped
     deploy:
       replicas: 1
@@ -265,6 +287,7 @@ services:
   # this stack -- Plane isn't reachable from outside the host without it.
   proxy:
     image: makeplane/plane-proxy:${APP_RELEASE:-v1.4.2}
+    mem_limit: ${PROXY_MEM_LIMIT:-128m}
     restart: unless-stopped
     deploy:
       replicas: 1
