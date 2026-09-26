@@ -22,6 +22,8 @@
 #   TURBO_CONCURRENCY=1      frontend build knobs passed as build args
 #   NODE_MAX_OLD_SPACE_SIZE=1536
 #   BUILD_THREADS=1
+#   MIN_DISK_FREE_MB=6000    refuse to start building below this much free
+#                            disk (a full frontend build needs several GB)
 #
 # A single frontend image build peaks at ~3.4GB even with the knobs above
 # (~5GB without them), more than a 4GB host has free with the stack running.
@@ -39,6 +41,7 @@ BUILD_MIN_MB=${BUILD_MIN_MB:-3500}
 TURBO_CONCURRENCY=${TURBO_CONCURRENCY:-1}
 NODE_MAX_OLD_SPACE_SIZE=${NODE_MAX_OLD_SPACE_SIZE:-1536}
 BUILD_THREADS=${BUILD_THREADS:-1}
+MIN_DISK_FREE_MB=${MIN_DISK_FREE_MB:-6000}
 
 cd "$(dirname "$0")/.."
 REPO_ROOT="$(cd ../.. && pwd)"
@@ -69,6 +72,30 @@ ensure_swap() {
   sudo swapon /swapfile
   grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
   log "swap enabled: $(swap_total_mb)MB"
+}
+
+disk_free_mb() { df -Pm / | awk 'NR==2 {print $4}'; }
+
+# Every build leaves GBs of BuildKit cache plus the superseded (now dangling)
+# images; left alone they fill the disk within a couple of deploys -- which
+# also starves Postgres, not just the next build. Never touches volumes.
+cleanup_docker_disk() {
+  docker builder prune -af >/dev/null 2>&1 || true
+  docker image prune -f >/dev/null 2>&1 || true
+  log "docker cleanup done: $(disk_free_mb)MB disk free"
+}
+
+require_disk_space() {
+  mb=$(disk_free_mb)
+  if [ "$mb" -lt "$MIN_DISK_FREE_MB" ]; then
+    log "only ${mb}MB disk free -- pruning docker build cache and dangling images"
+    cleanup_docker_disk
+    mb=$(disk_free_mb)
+  fi
+  if [ "$mb" -lt "$MIN_DISK_FREE_MB" ]; then
+    log "ERROR: only ${mb}MB disk free (need ${MIN_DISK_FREE_MB}MB) -- aborting before the disk fills up." >&2
+    exit 1
+  fi
 }
 
 require_build_headroom() {
@@ -108,6 +135,7 @@ ensure_swap
 # share api's image (plane-backend:local), so building api covers them too.
 BUILD_SERVICES="web space admin live api"
 for svc in $BUILD_SERVICES; do
+  require_disk_space
   require_build_headroom "$svc"
   if [ "$svc" = "api" ]; then
     $COMPOSE build "$svc"
@@ -134,6 +162,8 @@ for svc in $RESTART_SERVICES; do
   $COMPOSE up -d "$svc"
   wait_and_check "starting $svc"
 done
+
+cleanup_docker_disk
 
 log "deploy complete. current status:"
 $COMPOSE ps --format "table {{.Name}}\t{{.Status}}"

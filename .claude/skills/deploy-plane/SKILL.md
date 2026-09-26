@@ -56,6 +56,12 @@ faster -- that's the exact failure mode this skill exists to avoid.
    force it -- free memory first (or raise swap via `SWAP_SIZE_MB` on a
    host with no swap yet). Only intervene if a step outright fails.
 
+   It also checks disk before each build (`MIN_DISK_FREE_MB`, pruning
+   build cache and dangling images if short) and prunes them again after
+   the deploy -- the root disk is 50GB and each full deploy leaves ~8-10GB
+   of build cache behind. It never prunes volumes (the old MinIO `uploads`
+   volume is kept deliberately for rollback).
+
    **If SSH stops responding mid-build**, the host is out of memory. It
    won't recover on its own: reboot it from the EC2 console. Containers
    come back on their previous images; nothing is half-migrated because
