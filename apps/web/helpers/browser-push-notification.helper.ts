@@ -25,15 +25,13 @@ const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
 };
 
 /**
- * Requests notification permission, registers the service worker, subscribes
- * to browser push via the Push API, and persists the subscription on the
- * server. Returns true on success, false if unsupported/denied/failed.
+ * Makes sure this browser has a push subscription and that the server knows
+ * about it. Only works once notification permission is already granted — it
+ * never prompts. Safe to call repeatedly: the backend upserts by endpoint.
+ * Returns true if this browser ends up subscribed.
  */
-export const enableBrowserPushNotifications = async (): Promise<boolean> => {
-  if (!isBrowserPushSupported()) return false;
-
-  const permission = await Notification.requestPermission();
-  if (permission !== "granted") return false;
+export const syncBrowserPushSubscription = async (): Promise<boolean> => {
+  if (!isBrowserPushSupported() || Notification.permission !== "granted") return false;
 
   try {
     const registration = await navigator.serviceWorker.register("/sw.js");
@@ -60,6 +58,35 @@ export const enableBrowserPushNotifications = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error("Failed to enable browser push notifications", error);
+    return false;
+  }
+};
+
+/**
+ * Requests notification permission (call from a user action, e.g. a button
+ * click), then subscribes this browser and saves the subscription on the
+ * server. Returns true on success, false if unsupported/denied/failed.
+ */
+export const enableBrowserPushNotifications = async (): Promise<boolean> => {
+  if (!isBrowserPushSupported()) return false;
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") return false;
+
+  return syncBrowserPushSubscription();
+};
+
+/**
+ * Whether this particular browser will actually receive push notifications:
+ * permission granted and an active push subscription. The user's
+ * browser_push preference alone doesn't say anything about this device.
+ */
+export const isBrowserPushActiveHere = async (): Promise<boolean> => {
+  if (!isBrowserPushSupported() || Notification.permission !== "granted") return false;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+    return !!(await registration?.pushManager.getSubscription());
+  } catch {
     return false;
   }
 };

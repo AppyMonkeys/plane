@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { Controller, useForm } from "react-hook-form";
 // plane imports
@@ -18,6 +18,7 @@ import { SettingsControlItem } from "@/components/settings/control-item";
 import {
   disableBrowserPushNotifications,
   enableBrowserPushNotifications,
+  isBrowserPushActiveHere,
   isBrowserPushSupported,
 } from "@/helpers/browser-push-notification.helper";
 // services
@@ -34,6 +35,10 @@ export const NotificationsProfileSettingsForm = observer(function NotificationsP
   const { data } = props;
   // translation
   const { t } = useTranslation();
+  // whether *this* browser is actually subscribed -- the browser_push preference
+  // is per user and defaults to on, so it can't tell whether this device will
+  // receive anything
+  const [isPushActiveHere, setIsPushActiveHere] = useState(false);
   // form data
   const { control, reset } = useForm<IUserEmailNotificationSettings>({
     defaultValues: {
@@ -77,6 +82,7 @@ export const NotificationsProfileSettingsForm = observer(function NotificationsP
       }
       await userService.updateCurrentUserEmailNotificationSettings({ browser_push: value });
       onChange(value);
+      setIsPushActiveHere(value);
       setToast({
         title: t("success"),
         type: TOAST_TYPE.SUCCESS,
@@ -95,6 +101,10 @@ export const NotificationsProfileSettingsForm = observer(function NotificationsP
     reset(data);
   }, [reset, data]);
 
+  useEffect(() => {
+    void isBrowserPushActiveHere().then(setIsPushActiveHere);
+  }, []);
+
   return (
     <div className="flex flex-col gap-y-1">
       {isBrowserPushSupported() && (
@@ -108,7 +118,7 @@ export const NotificationsProfileSettingsForm = observer(function NotificationsP
               render={({ field: { value, onChange } }) => (
                 <Switch
                   size="sm"
-                  checked={value}
+                  checked={value && isPushActiveHere}
                   onCheckedChange={(newValue) => {
                     void handleBrowserPushChange(newValue, onChange);
                   }}
