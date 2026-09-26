@@ -22,7 +22,7 @@ faster -- that's the exact failure mode this skill exists to avoid.
 1. **Confirm the target host and branch** with the user if not given
    (default branch: `preview`).
 
-2. **Take a safety backup first**, if the stack has one configured
+2. **Ask user to take a safety backup**, if the stack has one configured
    (`deployments/appymonkeys/backup-scripts/run-backup.sh` on a cron, or
    trigger one manually -- see `backup-scripts/README.md`). Wait for it
    to actually complete before proceeding; don't deploy on top of a stack
