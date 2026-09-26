@@ -2,8 +2,6 @@ name: "CodeQL"
 
 on:
   workflow_dispatch:
-  push:
-    branches: ["preview", "canary", "master"]
   pull_request:
     branches: ["preview", "canary", "master"]
 

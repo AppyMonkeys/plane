@@ -13,11 +13,6 @@ on:
     paths:
       - "packages/i18n/**"
       - ".github/workflows/i18n-sync-check.yml"
-  push:
-    branches:
-      - "preview"
-    paths:
-      - "packages/i18n/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
