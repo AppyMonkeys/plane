@@ -62,6 +62,7 @@ export const PeekOverviewHeader = observer(function PeekOverviewHeader(props: Pr
         title: "Link copied!",
         message: "Work item link copied to clipboard.",
       });
+      return;
     });
   };
 
@@ -98,6 +99,7 @@ export const PeekOverviewHeader = observer(function PeekOverviewHeader(props: Pr
               leaveTo="transform opacity-0 scale-95"
             >
               <Listbox.Options
+                modal={false}
                 as="ul"
                 className="shadow-lg absolute left-0 z-10 mt-1 min-w-[12rem] origin-top-left overflow-y-auto rounded-md border border-strong bg-surface-2 text-11 whitespace-nowrap focus:outline-none"
               >
@@ -129,6 +131,7 @@ export const PeekOverviewHeader = observer(function PeekOverviewHeader(props: Pr
             type="button"
             onClick={handleCopyLink}
             className="shrink-0 text-tertiary hover:text-secondary focus:outline-none"
+            // oxlint-disable-next-line jsx_a11y/tabindex-no-positive
             tabIndex={1}
           >
             <LinkOutline className="h-4 w-4 -rotate-45" />

@@ -106,6 +106,7 @@ export const ProjectMultiSelectModal = observer(function ProjectMultiSelectModal
               const projectDetails = projectDetailsMap.get(projectId);
               if (!projectDetails) return null;
               return (
+                // oxlint-disable-next-line jsx_a11y/click-events-have-key-events jsx_a11y/no-static-element-interactions
                 <div
                   key={projectDetails.id}
                   className="group flex cursor-pointer items-center gap-1.5 rounded-sm bg-surface-2 px-2 py-1"
@@ -124,6 +125,7 @@ export const ProjectMultiSelectModal = observer(function ProjectMultiSelectModal
           </div>
         )}
         <Combobox.Options
+          modal={false}
           as="ul"
           static
           className="vertical-scrollbar scrollbar-md max-h-80 scroll-py-2 overflow-y-auto py-2 transition-[height] duration-200 ease-in-out"

@@ -78,9 +78,10 @@ export const MemberOptions = observer(function MemberOptions(props: Props) {
     if (isOpen) {
       onDropdownOpen?.();
       if (!isMobile) {
-        inputRef.current && inputRef.current.focus();
+        inputRef.current?.focus();
       }
     }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isMobile]);
 
   const searchInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -131,7 +132,7 @@ export const MemberOptions = observer(function MemberOptions(props: Props) {
   );
 
   return createPortal(
-    <Combobox.Options as="ul" data-prevent-outside-click static>
+    <Combobox.Options modal={false} as="ul" data-prevent-outside-click static>
       <div
         className={cn(
           "z-30 my-1 w-48 rounded-sm border-[0.5px] border-strong bg-surface-1 px-2 py-2.5 text-11 shadow-raised-200 focus:outline-none",

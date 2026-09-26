@@ -33,13 +33,15 @@ describe("headlessui-v2-default-tags", () => {
       import { Combobox } from "@headlessui/react";
 
       export const Select = () => (
-        <Combobox.Options className="list">
+        <Combobox.Options modal={false} className="list">
           <Combobox.Option value="a">A</Combobox.Option>
         </Combobox.Options>
       );
     `);
 
-    expect(result).toContain(`<Combobox.Options as="ul" className="list">`);
+    expect(result).toContain(
+      `<Combobox.Options modal={false} as="ul" className="list">`
+    );
     expect(result).toContain(`<Combobox.Option as="li" value="a">`);
   });
 
@@ -48,13 +50,13 @@ describe("headlessui-v2-default-tags", () => {
       import { Listbox } from "@headlessui/react";
 
       export const Select = () => (
-        <Listbox.Options>
+        <Listbox.Options modal={false}>
           <Listbox.Option value="a">A</Listbox.Option>
         </Listbox.Options>
       );
     `);
 
-    expect(result).toContain(`<Listbox.Options as="ul">`);
+    expect(result).toContain(`<Listbox.Options modal={false} as="ul">`);
     expect(result).toContain(`<Listbox.Option as="li" value="a">`);
   });
 
@@ -125,14 +127,14 @@ describe("headlessui-v2-default-tags", () => {
           as={Fragment}
           show={open}
         >
-          <Combobox.Options as="div">x</Combobox.Options>
+          <Combobox.Options modal={false} as="div">x</Combobox.Options>
         </Transition>
       );
     `);
 
     expect(result).toContain("as={Fragment}");
     expect(result).not.toContain(`as="div" as={Fragment}`);
-    expect(result).toContain(`<Combobox.Options as="div">`);
+    expect(result).toContain(`<Combobox.Options modal={false} as="div">`);
     // exactly one `as` per element
     expect(result.match(/as=/g)).toHaveLength(2);
   });
@@ -163,7 +165,7 @@ describe("headlessui-v2-default-tags", () => {
 
       export const All = () => (
         <>
-          <Menu.Items><Menu.Item>a</Menu.Item></Menu.Items>
+          <Menu.Items modal={false}><Menu.Item>a</Menu.Item></Menu.Items>
           <Dialog.Panel><Dialog.Title>t</Dialog.Title></Dialog.Panel>
           <Disclosure.Button /><Disclosure.Panel />
           <Popover.Button /><Popover.Panel />

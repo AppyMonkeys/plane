@@ -45,6 +45,11 @@ export interface ILabelDropdownProps {
   label: React.ReactNode;
 }
 
+const preventPropagation = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  e.stopPropagation();
+  e.preventDefault();
+};
+
 export function LabelDropdown(props: ILabelDropdownProps) {
   const {
     projectId,
@@ -98,18 +103,18 @@ export function LabelDropdown(props: ILabelDropdownProps) {
 
   const options = useMemo(
     () =>
-      projectLabels.map((label) => ({
-        value: label?.id,
-        query: label?.name,
+      projectLabels.map((projectLabel) => ({
+        value: projectLabel?.id,
+        query: projectLabel?.name,
         content: (
           <div className="flex items-center justify-start gap-2 overflow-hidden">
             <span
               className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
               style={{
-                backgroundColor: label?.color,
+                backgroundColor: projectLabel?.color,
               }}
             />
-            <div className="line-clamp-1 inline-block truncate">{label?.name}</div>
+            <div className="line-clamp-1 inline-block truncate">{projectLabel?.name}</div>
           </div>
         ),
       })),
@@ -162,8 +167,8 @@ export function LabelDropdown(props: ILabelDropdownProps) {
   const handleAddLabel = async (labelName: string) => {
     if (!projectId) return;
     setSubmitting(true);
-    const label = await createLabel(workspaceSlug, projectId, { name: labelName, color: getRandomLabelColor() });
-    onChange([...value, label.id]);
+    const newLabel = await createLabel(workspaceSlug, projectId, { name: labelName, color: getRandomLabelColor() });
+    onChange([...value, newLabel.id]);
     setQuery("");
     setSubmitting(false);
   };
@@ -231,13 +236,10 @@ export function LabelDropdown(props: ILabelDropdownProps) {
     ]
   );
 
-  const preventPropagation = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    e.stopPropagation();
-    e.preventDefault();
-  };
-
   return (
+    // oxlint-disable-next-line jsx_a11y/click-events-have-key-events jsx_a11y/no-static-element-interactions
     <div className={`${fullHeight ? "h-full" : "h-5"}`} onClick={preventPropagation}>
+      {/* oxlint-disable-next-line jsx_a11y/no-static-element-interactions */}
       <ComboDropDown
         as="div"
         ref={dropdownRef}
@@ -251,7 +253,7 @@ export function LabelDropdown(props: ILabelDropdownProps) {
         multiple
       >
         {isOpen && (
-          <Combobox.Options as="ul" className="fixed z-10" static>
+          <Combobox.Options modal={false} as="ul" className="fixed z-10" static>
             <div
               className={`z-10 my-1 h-auto w-48 rounded-sm border border-strong bg-surface-1 px-2 py-2.5 text-caption-sm-regular whitespace-nowrap shadow-raised-200 focus:outline-none ${optionsClassName}`}
               ref={setPopperElement}
@@ -308,6 +310,7 @@ export function LabelDropdown(props: ILabelDropdownProps) {
                 ) : submitting ? (
                   <LoadingOutline className="h-3.5 w-3.5 animate-spin" />
                 ) : canCreateLabel ? (
+                  // oxlint-disable-next-line jsx_a11y/click-events-have-key-events
                   <p
                     onClick={() => {
                       if (!query.length) return;

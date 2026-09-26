@@ -86,6 +86,7 @@ export function ParentIssuesListModal({
         setIsSearching(false);
         setIsLoading(false);
       });
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm, isOpen, issueId, projectId, workspaceSlug]);
 
   return (
@@ -112,6 +113,7 @@ export function ParentIssuesListModal({
           />
         </div>
         <Combobox.Options
+          modal={false}
           as="ul"
           static
           className="vertical-scrollbar scrollbar-md max-h-80 scroll-py-2 overflow-y-auto"

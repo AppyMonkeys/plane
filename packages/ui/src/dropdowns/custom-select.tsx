@@ -67,6 +67,7 @@ function CustomSelect(props: ICustomSelectProps) {
 
   return (
     <DropdownContext.Provider value={closeDropdown}>
+      {/* oxlint-disable-next-line jsx_a11y/no-static-element-interactions */}
       <Combobox
         as="div"
         ref={dropdownRef}
@@ -119,7 +120,7 @@ function CustomSelect(props: ICustomSelectProps) {
         </>
         {isOpen &&
           createPortal(
-            <Combobox.Options as="ul" data-prevent-outside-click>
+            <Combobox.Options modal={false} as="ul" data-prevent-outside-click>
               <div
                 className={cn(
                   "z-30 my-1 min-w-48 overflow-y-scroll rounded-md border-[0.5px] border-subtle-1 bg-surface-1 px-2 py-2.5 text-11 whitespace-nowrap focus:outline-none",
@@ -162,6 +163,7 @@ function Option(props: ICustomSelectItemProps) {
   }, [closeDropdown]);
 
   return (
+    // oxlint-disable-next-line jsx_a11y/click-events-have-key-events
     <Combobox.Option
       as="li"
       value={value}

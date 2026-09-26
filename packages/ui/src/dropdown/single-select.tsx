@@ -93,8 +93,8 @@ export function Dropdown(props: ISingleSelectDropdown) {
     if (!options) return undefined;
 
     const filteredOptions = queryArray
-      ? (options || []).filter((options) => {
-          const queryString = queryArray.map((query) => options.data[query]).join(" ");
+      ? (options || []).filter((option) => {
+          const queryString = queryArray.map((key) => option.data[key]).join(" ");
           return queryString.toLowerCase().includes(query.toLowerCase());
         })
       : options;
@@ -106,6 +106,7 @@ export function Dropdown(props: ISingleSelectDropdown) {
       (option) => !(value ?? []).includes(option.data[option.value]),
       () => sortByKey && sortByKey.toLowerCase(),
     ]);
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [query, options]);
 
   // hooks
@@ -114,6 +115,7 @@ export function Dropdown(props: ISingleSelectDropdown) {
   useOutsideClickDetector(dropdownRef, handleClose, true);
 
   return (
+    // oxlint-disable-next-line jsx_a11y/no-static-element-interactions
     <Combobox
       as="div"
       ref={dropdownRef}
@@ -142,7 +144,7 @@ export function Dropdown(props: ISingleSelectDropdown) {
         disabled={disabled}
       />
       {isOpen && (
-        <Combobox.Options as="ul" className="fixed z-10" static>
+        <Combobox.Options modal={false} as="ul" className="fixed z-10" static>
           <div
             className={cn(
               "my-1 w-48 rounded-sm border-[0.5px] border-strong bg-surface-1 px-2 py-2 text-11 shadow-raised-200 focus:outline-none",

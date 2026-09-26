@@ -108,8 +108,8 @@ export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssue
 
   const handleAddLabel = async (labelName: string) => {
     setSubmitting(true);
-    const label = await onAddLabel(workspaceSlug, projectId, { name: labelName, color: getRandomLabelColor() });
-    onSelect([...values, label.id]);
+    const newLabel = await onAddLabel(workspaceSlug, projectId, { name: labelName, color: getRandomLabelColor() });
+    onSelect([...values, newLabel.id]);
     setQuery("");
     setSubmitting(false);
   };
@@ -138,7 +138,7 @@ export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssue
           </Button>
         </Combobox.Button>
 
-        <Combobox.Options as="ul" className="fixed z-10">
+        <Combobox.Options modal={false} as="ul" className="fixed z-10">
           <div
             className={`z-10 my-1 w-48 rounded-sm border border-strong bg-surface-1 py-2.5 text-11 whitespace-nowrap shadow-raised-200 focus:outline-none`}
             ref={setPopperElement}
@@ -192,6 +192,7 @@ export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssue
                 <LoadingOutline className="spin h-3.5 w-3.5" />
               ) : canCreateLabel ? (
                 <ul className="space-y-1">
+                  {/* oxlint-disable-next-line jsx_a11y/click-events-have-key-events */}
                   <Combobox.Option
                     as="li"
                     value={query}

@@ -131,6 +131,7 @@ export function ExistingIssuesListModal(props: Props) {
 
   useEffect(() => {
     handleSearch();
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm, isOpen, isWorkspaceLevel, projectId, workspaceSlug]);
 
   const filteredIssues = issues.filter((issue) => !shouldHideIssue?.(issue));
@@ -217,6 +218,7 @@ export function ExistingIssuesListModal(props: Props) {
         </div>
 
         <Combobox.Options
+          modal={false}
           as="ul"
           static
           className="vertical-scrollbar scrollbar-md max-h-80 scroll-py-2 overflow-y-auto"

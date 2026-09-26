@@ -255,7 +255,7 @@ export const DateRangeDropdown = observer(function DateRangeDropdown(props: Prop
   );
 
   const comboOptions = (
-    <Combobox.Options as="ul" data-prevent-outside-click static>
+    <Combobox.Options modal={false} as="ul" data-prevent-outside-click static>
       <div
         className="z-30 my-1 overflow-hidden rounded-md border-[0.5px] border-subtle-1 bg-surface-1"
         ref={setPopperElement}
@@ -283,6 +283,7 @@ export const DateRangeDropdown = observer(function DateRangeDropdown(props: Prop
   const Options = renderInPortal ? createPortal(comboOptions, document.body) : comboOptions;
 
   return (
+    // oxlint-disable-next-line jsx_a11y/no-static-element-interactions
     <ComboDropDown
       as="div"
       ref={dropdownRef}

@@ -73,7 +73,7 @@ export function CustomSearchSelect(props: ICustomSearchSelectProps) {
 
   const closeDropdown = () => {
     setIsOpen(false);
-    onClose && onClose();
+    onClose?.();
   };
 
   const handleKeyDown = useDropdownKeyDown(openDropdown, closeDropdown, isOpen);
@@ -85,6 +85,7 @@ export function CustomSearchSelect(props: ICustomSearchSelectProps) {
   };
 
   return (
+    // oxlint-disable-next-line jsx_a11y/no-static-element-interactions
     <Combobox
       as="div"
       ref={dropdownRef}
@@ -142,7 +143,7 @@ export function CustomSearchSelect(props: ICustomSearchSelectProps) {
             )}
             {isOpen &&
               createPortal(
-                <Combobox.Options as="ul" data-prevent-outside-click static>
+                <Combobox.Options modal={false} as="ul" data-prevent-outside-click static>
                   <div
                     className={cn(
                       "z-30 my-1 min-w-48 overflow-y-scroll rounded-md border-[0.5px] border-subtle-1 bg-surface-1 py-2.5 text-11 whitespace-nowrap focus:outline-none",
@@ -175,6 +176,7 @@ export function CustomSearchSelect(props: ICustomSearchSelectProps) {
                       {filteredOptions ? (
                         filteredOptions.length > 0 ? (
                           filteredOptions.map((option) => (
+                            // oxlint-disable-next-line jsx_a11y/click-events-have-key-events
                             <Combobox.Option
                               as="li"
                               key={option.value}
