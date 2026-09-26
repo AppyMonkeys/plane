@@ -31,3 +31,7 @@ export const SUPPORT_EMAIL = process.env.VITE_SUPPORT_EMAIL || "support@plane.so
 export const MARKETING_PRICING_PAGE_LINK = "https://plane.so/pricing";
 export const MARKETING_CONTACT_US_PAGE_LINK = "https://plane.so/contact";
 export const MARKETING_PLANE_ONE_PAGE_LINK = "https://plane.so/one";
+// Renames "Work item Type"/"State" labels to Jira-style "Work Type"/"Work Status" in the UI
+export const IS_JIRA_TERMINOLOGY_ENABLED = process.env.VITE_JIRA_TERMINOLOGY === "1";
+// Hides Cycles and Modules across the UI (nav, settings, quick actions, work item property rows, etc.)
+export const IS_CYCLES_MODULES_HIDDEN = process.env.VITE_HIDE_CYCLES_MODULES === "1";

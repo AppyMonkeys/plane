@@ -4,16 +4,17 @@
  * See the LICENSE file for details.
  */
 
-import i18n from "i18next";
+import { createInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
 import ICU from "i18next-icu";
 import resourcesToBackend from "i18next-resources-to-backend";
 import { SUPPORTED_LANGUAGES, FALLBACK_LANGUAGE, LANGUAGE_STORAGE_KEY } from "../constants/language";
 import { NAMESPACES, DEFAULT_NAMESPACE } from "../constants/namespaces";
+import { JIRA_TERMINOLOGY_ENABLED, JIRA_TERMINOLOGY_OVERRIDES } from "./jira-terminology-overrides";
 
 import type { i18n as I18nInstance } from "i18next";
 
-export const i18nInstance: I18nInstance = i18n.createInstance();
+export const i18nInstance: I18nInstance = createInstance();
 
 i18nInstance
   .use(ICU)
@@ -22,6 +23,17 @@ i18nInstance
 
 const initialLng =
   typeof window !== "undefined" ? localStorage.getItem(LANGUAGE_STORAGE_KEY) || FALLBACK_LANGUAGE : FALLBACK_LANGUAGE;
+
+function applyJiraTerminologyOverrides() {
+  if (!JIRA_TERMINOLOGY_ENABLED) return;
+  for (const [namespace, overrides] of Object.entries(JIRA_TERMINOLOGY_OVERRIDES)) {
+    i18nInstance.addResourceBundle("en", namespace, overrides, true, true);
+  }
+}
+
+// Namespaces load asynchronously (including after the initial load, e.g. on-demand
+// namespaces), so re-apply the overrides every time English resources are loaded.
+i18nInstance.on("loaded", applyJiraTerminologyOverrides);
 
 export const initPromise = i18nInstance
   .init({

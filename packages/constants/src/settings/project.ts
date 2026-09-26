@@ -7,6 +7,7 @@
 // plane imports
 import { EUserProjectRoles } from "@plane/types";
 import type { TProjectSettingsItem, TProjectSettingsTabs } from "@plane/types";
+import { IS_CYCLES_MODULES_HIDDEN } from "../endpoints";
 
 export enum PROJECT_SETTINGS_CATEGORY {
   GENERAL = "general",
@@ -114,8 +115,7 @@ export const PROJECT_SETTINGS_FLAT_MAP: TProjectSettingsItem[] = Object.values(P
 export const GROUPED_PROJECT_SETTINGS: Record<PROJECT_SETTINGS_CATEGORY, TProjectSettingsItem[]> = {
   [PROJECT_SETTINGS_CATEGORY.GENERAL]: [PROJECT_SETTINGS["general"], PROJECT_SETTINGS["members"]],
   [PROJECT_SETTINGS_CATEGORY.FEATURES]: [
-    PROJECT_SETTINGS["features_cycles"],
-    PROJECT_SETTINGS["features_modules"],
+    ...(IS_CYCLES_MODULES_HIDDEN ? [] : [PROJECT_SETTINGS["features_cycles"], PROJECT_SETTINGS["features_modules"]]),
     PROJECT_SETTINGS["features_views"],
     PROJECT_SETTINGS["features_pages"],
     PROJECT_SETTINGS["features_intake"],

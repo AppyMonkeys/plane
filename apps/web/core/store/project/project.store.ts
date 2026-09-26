@@ -8,6 +8,7 @@ import { sortBy, cloneDeep, update, set } from "lodash-es";
 import { observable, action, computed, makeObservable, runInAction } from "mobx";
 import { computedFn } from "mobx-utils";
 // plane imports
+import { IS_CYCLES_MODULES_HIDDEN } from "@plane/constants";
 import type { TFetchStatus, TLoader, TProjectAnalyticsCount, TProjectAnalyticsCountParams } from "@plane/types";
 // helpers
 import { orderProjects, shouldFilterProject } from "@plane/utils";
@@ -19,6 +20,16 @@ import { ProjectService, ProjectStateService, ProjectArchiveService } from "@/se
 import type { CoreRootStore } from "../root.store";
 
 type ProjectOverviewCollapsible = "links" | "attachments" | "milestones";
+
+// When VITE_HIDE_CYCLES_MODULES="1", forces cycle_view/module_view to false on every
+// project read so Cycles and Modules disappear from nav, settings, filters, etc.
+// without each consumer needing to know about the flag.
+function withCyclesModulesVisibility<T extends { cycle_view?: boolean; module_view?: boolean }>(
+  project: T | undefined
+): T | undefined {
+  if (!project || !IS_CYCLES_MODULES_HIDDEN) return project;
+  return { ...project, cycle_view: false, module_view: false };
+}
 
 export interface IProjectStore {
   // observables
@@ -221,7 +232,7 @@ export class ProjectStore implements IProjectStore {
    */
   get currentProjectDetails() {
     if (!this.rootStore.router.projectId) return;
-    return this.projectMap?.[this.rootStore.router.projectId];
+    return withCyclesModulesVisibility(this.projectMap?.[this.rootStore.router.projectId]);
   }
 
   /**
@@ -405,7 +416,7 @@ export class ProjectStore implements IProjectStore {
    */
   getProjectById = computedFn((projectId: string | undefined | null) => {
     const projectInfo = this.projectMap[projectId ?? ""] || undefined;
-    return projectInfo;
+    return withCyclesModulesVisibility(projectInfo);
   });
 
   /**
@@ -425,7 +436,7 @@ export class ProjectStore implements IProjectStore {
    */
   getPartialProjectById = computedFn((projectId: string | undefined | null) => {
     const projectInfo = this.projectMap[projectId ?? ""] || undefined;
-    return projectInfo;
+    return withCyclesModulesVisibility(projectInfo);
   });
 
   /**
@@ -457,7 +468,7 @@ export class ProjectStore implements IProjectStore {
   addProjectToFavorites = async (workspaceSlug: string, projectId: string) => {
     try {
       const currentProject = this.getProjectById(projectId);
-      if (currentProject.is_favorite) return;
+      if (currentProject?.is_favorite) return;
       runInAction(() => {
         set(this.projectMap, [projectId, "is_favorite"], true);
       });
@@ -486,7 +497,7 @@ export class ProjectStore implements IProjectStore {
   removeProjectFromFavorites = async (workspaceSlug: string, projectId: string) => {
     try {
       const currentProject = this.getProjectById(projectId);
-      if (!currentProject.is_favorite) return;
+      if (!currentProject?.is_favorite) return;
       runInAction(() => {
         set(this.projectMap, [projectId, "is_favorite"], false);
       });
@@ -607,6 +618,7 @@ export class ProjectStore implements IProjectStore {
           set(this.projectMap, [projectId, "archived_at"], response.archived_at);
           this.rootStore.favorite.removeFavoriteFromStore(projectId);
         });
+        return response;
       })
       .catch((error) => {
         console.log("Failed to archive project from project store");
@@ -627,6 +639,7 @@ export class ProjectStore implements IProjectStore {
         runInAction(() => {
           set(this.projectMap, [projectId, "archived_at"], null);
         });
+        return;
       })
       .catch((error) => {
         console.log("Failed to restore project from project store");
