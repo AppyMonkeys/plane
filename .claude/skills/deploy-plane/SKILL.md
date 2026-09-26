@@ -36,20 +36,30 @@ faster -- that's the exact failure mode this skill exists to avoid.
 
 4. **SSH into the target host and run the script:**
 
+   Run it detached with `nohup` so a dropped SSH session can't kill it
+   mid-deploy, then follow the log from separate short SSH calls:
+
    ```bash
-   ssh -i <key> <user>@<host>
-   cd ~/plane/deployments/appymonkeys
-   ./deploy-scripts/deploy.sh <branch>
+   ssh -i <key> <user>@<host> 'cd ~/plane/deployments/appymonkeys && nohup ./deploy-scripts/deploy.sh <branch> > ~/deploy.log 2>&1 &'
+   ssh -i <key> <user>@<host> 'grep "^\[deploy\]" ~/deploy.log | tail; tail -3 ~/deploy.log; free -m'
    ```
 
    Let it run to completion -- it already paces itself (build one
    service, pause, check memory; repeat for restarts). Don't run
    multiple `docker compose build`/`up` commands in parallel against the
-   same host while this is in progress.
+   same host while this is in progress. A full run takes roughly
+   30-60 minutes on a 4GB host.
 
 5. **If it reports low memory and pauses**, that's expected and handled
    automatically (it backs off `LOW_MEM_PAUSE_SECONDS` before
-   continuing). Only intervene if a step outright fails.
+   continuing). If it aborts with "only NMB RAM+swap available", don't
+   force it -- free memory first (or raise swap via `SWAP_SIZE_MB` on a
+   host with no swap yet). Only intervene if a step outright fails.
+
+   **If SSH stops responding mid-build**, the host is out of memory. It
+   won't recover on its own: reboot it from the EC2 console. Containers
+   come back on their previous images; nothing is half-migrated because
+   migrations only run after every build succeeds.
 
 6. **Verify health after it finishes:**
 

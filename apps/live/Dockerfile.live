@@ -45,7 +45,14 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store CI=true pnpm install --o
 
 ENV TURBO_TELEMETRY_DISABLED=1
 
-RUN pnpm turbo run build --filter=live
+# Memory knobs for small build hosts (deploy.sh sets these). Defaults keep
+# turbo's normal parallelism and Node's default heap.
+ARG TURBO_CONCURRENCY=10
+ARG NODE_MAX_OLD_SPACE_SIZE=""
+ARG BUILD_THREADS=""
+RUN NODE_OPTIONS="${NODE_MAX_OLD_SPACE_SIZE:+--max-old-space-size=$NODE_MAX_OLD_SPACE_SIZE}" \
+    RAYON_NUM_THREADS="$BUILD_THREADS" \
+    pnpm turbo run build --filter=live --concurrency=$TURBO_CONCURRENCY
 
 # *****************************************************************************
 # STAGE 3: Run the project
