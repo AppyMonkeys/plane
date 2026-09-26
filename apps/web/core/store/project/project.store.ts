@@ -21,13 +21,14 @@ import type { CoreRootStore } from "../root.store";
 
 type ProjectOverviewCollapsible = "links" | "attachments" | "milestones";
 
-// When VITE_HIDE_CYCLES_MODULES="1", forces cycle_view/module_view to false on every
-// project read so Cycles and Modules disappear from nav, settings, filters, etc.
-// without each consumer needing to know about the flag.
-function withCyclesModulesVisibility<T extends { cycle_view?: boolean; module_view?: boolean }>(
-  project: T | undefined
-): T | undefined {
-  if (!project || !IS_CYCLES_MODULES_HIDDEN) return project;
+// When VITE_HIDE_CYCLES_MODULES="1", forces cycle_view/module_view to false as projects
+// are written into projectMap, so Cycles and Modules disappear from nav, settings,
+// filters, etc. without each consumer needing to know about the flag.
+// Applied on write, not read: a read-time copy returned a new object on every
+// getProjectById() call, which re-triggered effects/SWR keyed on the project and
+// looped the work-items page's fetches forever.
+function withCyclesModulesVisibility<T extends { cycle_view?: boolean; module_view?: boolean }>(project: T): T {
+  if (!IS_CYCLES_MODULES_HIDDEN) return project;
   return { ...project, cycle_view: false, module_view: false };
 }
 
@@ -232,7 +233,7 @@ export class ProjectStore implements IProjectStore {
    */
   get currentProjectDetails() {
     if (!this.rootStore.router.projectId) return;
-    return withCyclesModulesVisibility(this.projectMap?.[this.rootStore.router.projectId]);
+    return this.projectMap?.[this.rootStore.router.projectId];
   }
 
   /**
@@ -306,7 +307,7 @@ export class ProjectStore implements IProjectStore {
    */
   processProjectAfterCreation = (workspaceSlug: string, data: TProject) => {
     runInAction(() => {
-      set(this.projectMap, [data.id], data);
+      set(this.projectMap, [data.id], withCyclesModulesVisibility(data));
       // updating the user project role in workspaceProjectsPermissions
       set(this.rootStore.user.permission.workspaceProjectsPermissions, [workspaceSlug, data.id], data.member_role);
     });
@@ -324,7 +325,7 @@ export class ProjectStore implements IProjectStore {
       const projectsResponse = await this.projectService.getProjectsLite(workspaceSlug);
       runInAction(() => {
         projectsResponse.forEach((project) => {
-          update(this.projectMap, [project.id], (p) => ({ ...p, ...project }));
+          update(this.projectMap, [project.id], (p) => withCyclesModulesVisibility({ ...p, ...project }));
         });
         this.loader = "loaded";
         if (!this.fetchStatus) this.fetchStatus = "partial";
@@ -353,7 +354,7 @@ export class ProjectStore implements IProjectStore {
       const projectsResponse = await this.projectService.getProjects(workspaceSlug);
       runInAction(() => {
         projectsResponse.forEach((project) => {
-          update(this.projectMap, [project.id], (p) => ({ ...p, ...project }));
+          update(this.projectMap, [project.id], (p) => withCyclesModulesVisibility({ ...p, ...project }));
         });
         this.loader = "loaded";
         this.fetchStatus = "complete";
@@ -376,7 +377,7 @@ export class ProjectStore implements IProjectStore {
     try {
       const response = await this.projectService.getProject(workspaceSlug, projectId);
       runInAction(() => {
-        update(this.projectMap, [projectId], (p) => ({ ...p, ...response }));
+        update(this.projectMap, [projectId], (p) => withCyclesModulesVisibility({ ...p, ...response }));
       });
       return response;
     } catch (error) {
@@ -416,7 +417,7 @@ export class ProjectStore implements IProjectStore {
    */
   getProjectById = computedFn((projectId: string | undefined | null) => {
     const projectInfo = this.projectMap[projectId ?? ""] || undefined;
-    return withCyclesModulesVisibility(projectInfo);
+    return projectInfo;
   });
 
   /**
@@ -436,7 +437,7 @@ export class ProjectStore implements IProjectStore {
    */
   getPartialProjectById = computedFn((projectId: string | undefined | null) => {
     const projectInfo = this.projectMap[projectId ?? ""] || undefined;
-    return withCyclesModulesVisibility(projectInfo);
+    return projectInfo;
   });
 
   /**
@@ -565,7 +566,7 @@ export class ProjectStore implements IProjectStore {
     const projectDetails = cloneDeep(this.getProjectById(projectId));
     try {
       runInAction(() => {
-        set(this.projectMap, [projectId], { ...projectDetails, ...data });
+        set(this.projectMap, [projectId], withCyclesModulesVisibility({ ...projectDetails, ...data }));
         this.isUpdatingProject = true;
       });
       const response = await this.projectService.updateProject(workspaceSlug, projectId, data);
@@ -576,7 +577,7 @@ export class ProjectStore implements IProjectStore {
     } catch (error) {
       console.log("Failed to create project from project store");
       runInAction(() => {
-        set(this.projectMap, [projectId], projectDetails);
+        set(this.projectMap, [projectId], withCyclesModulesVisibility(projectDetails));
         this.isUpdatingProject = false;
       });
       throw error;
