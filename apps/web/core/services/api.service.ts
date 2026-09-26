@@ -6,7 +6,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { AxiosInstance, AxiosRequestConfig } from "axios";
-import { create } from "axios";
+import { create, isCancel } from "axios";
 
 export abstract class APIService {
   protected baseURL: string;
@@ -29,6 +29,15 @@ export abstract class APIService {
         if (error.response && error.response.status === 401) {
           const currentPath = window.location.pathname;
           window.location.replace(`/${currentPath ? `?next_path=${currentPath}` : ``}`);
+        }
+        // Network failures (offline, ERR_NETWORK_CHANGED, timeouts) have no response,
+        // and services reject with `error.response(.data)` -- i.e. `undefined`. Give
+        // them a response-shaped payload so callers and toasts get a real message.
+        if (!error.response && !isCancel(error)) {
+          error.response = {
+            status: 0,
+            data: { error: "Network error. Check your connection and try again." },
+          };
         }
         return Promise.reject(error);
       }

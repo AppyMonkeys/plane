@@ -101,9 +101,12 @@ export class IssueStore implements IIssueStore {
     // store handlers from issue detail
     // parent
     if (issue && issue?.parent && issue?.parent?.id && issue?.parent?.project_id) {
-      this.issueService.retrieve(workspaceSlug, issue.parent.project_id, issue?.parent?.id).then((res) => {
-        this.rootIssueDetailStore.rootIssueStore.issues.addIssue([res]);
-      });
+      this.issueService
+        .retrieve(workspaceSlug, issue.parent.project_id, issue?.parent?.id)
+        .then((res) => this.rootIssueDetailStore.rootIssueStore.issues.addIssue([res]))
+        // Best-effort: the work item itself is already loaded, so a failed parent
+        // fetch (e.g. a dropped connection) must not become an unhandled rejection.
+        .catch((error) => console.error("Failed to fetch parent work item", error));
     }
     // assignees
     // labels
@@ -286,9 +289,12 @@ export class IssueStore implements IIssueStore {
 
     // handle parent issue if exists
     if (issue?.parent && issue?.parent?.id && issue?.parent?.project_id) {
-      this.issueService.retrieve(workspaceSlug, issue.parent.project_id, issue.parent.id).then((res) => {
-        this.rootIssueDetailStore.rootIssueStore.issues.addIssue([res]);
-      });
+      this.issueService
+        .retrieve(workspaceSlug, issue.parent.project_id, issue.parent.id)
+        .then((res) => this.rootIssueDetailStore.rootIssueStore.issues.addIssue([res]))
+        // Best-effort: the work item itself is already loaded, so a failed parent
+        // fetch (e.g. a dropped connection) must not become an unhandled rejection.
+        .catch((error) => console.error("Failed to fetch parent work item", error));
     }
 
     // add identifiers to map
