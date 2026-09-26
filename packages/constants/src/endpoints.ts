@@ -35,3 +35,6 @@ export const MARKETING_PLANE_ONE_PAGE_LINK = "https://plane.so/one";
 export const IS_JIRA_TERMINOLOGY_ENABLED = process.env.VITE_JIRA_TERMINOLOGY === "1";
 // Hides Cycles and Modules across the UI (nav, settings, quick actions, work item property rows, etc.)
 export const IS_CYCLES_MODULES_HIDDEN = process.env.VITE_HIDE_CYCLES_MODULES === "1";
+// Jira-style priority: Highest/High/Medium/Low/Lowest labels, arrow icons, and new work items default to Medium.
+// On by default; set VITE_JIRA_PRIORITY="0" to restore Plane's Urgent/High/Medium/Low/None.
+export const IS_JIRA_PRIORITY_ENABLED = process.env.VITE_JIRA_PRIORITY !== "0";

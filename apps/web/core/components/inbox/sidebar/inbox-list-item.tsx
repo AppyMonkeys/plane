@@ -9,6 +9,7 @@ import { observer } from "mobx-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 // plane imports
+import { ISSUE_PRIORITIES } from "@plane/constants";
 import { Avatar } from "@makeplane/propel/components/avatar";
 import { PriorityIcon } from "@plane/propel/icons";
 import { Tooltip } from "@makeplane/propel/components/tooltip";
@@ -89,7 +90,7 @@ export const InboxIssueListItem = observer(function InboxIssueListItem(props: In
               <div className="rounded-full border-2 border-strong-1" />
 
               {issue.priority && (
-                <Tooltip label={`Priority: ${issue.priority ?? "None"}`}>
+                <Tooltip label={`Priority: ${ISSUE_PRIORITIES.find((p) => p.key === issue.priority)?.title ?? "None"}`}>
                   <PriorityIcon priority={issue.priority} withContainer className="h-3 w-3" />
                 </Tooltip>
               )}

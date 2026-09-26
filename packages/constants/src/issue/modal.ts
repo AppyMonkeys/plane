@@ -6,6 +6,7 @@
 
 // plane imports
 import type { TIssue } from "@plane/types";
+import { IS_JIRA_PRIORITY_ENABLED } from "../endpoints";
 
 export const DEFAULT_WORK_ITEM_FORM_VALUES: Partial<TIssue> = {
   project_id: "",
@@ -15,7 +16,7 @@ export const DEFAULT_WORK_ITEM_FORM_VALUES: Partial<TIssue> = {
   estimate_point: null,
   state_id: "",
   parent_id: null,
-  priority: "none",
+  priority: IS_JIRA_PRIORITY_ENABLED ? "medium" : "none",
   assignee_ids: [],
   label_ids: [],
   cycle_id: null,

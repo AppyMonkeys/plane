@@ -10,7 +10,7 @@ import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react";
 // plane imports
-import { ETabIndices } from "@plane/constants";
+import { ETabIndices, IS_JIRA_PRIORITY_ENABLED } from "@plane/constants";
 import type { EditorRefApi } from "@plane/editor";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
@@ -45,7 +45,7 @@ export const defaultIssueData: Partial<TIssue> = {
   id: undefined,
   name: "",
   description_html: "",
-  priority: "none",
+  priority: IS_JIRA_PRIORITY_ENABLED ? "medium" : "none",
   state_id: "",
   label_ids: [],
   assignee_ids: [],

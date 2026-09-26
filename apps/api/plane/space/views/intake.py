@@ -160,7 +160,7 @@ class IntakeIssuePublicViewSet(BaseViewSet):
             name=request.data.get("issue", {}).get("name"),
             description_json=request.data.get("issue", {}).get("description_json", {}),
             description_html=safe_description_html,
-            priority=request.data.get("issue", {}).get("priority", "low"),
+            priority=request.data.get("issue", {}).get("priority", "medium"),
             project_id=project_deploy_board.project_id,
             state_id=triage_state.id,
         )

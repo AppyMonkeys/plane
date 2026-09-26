@@ -196,7 +196,7 @@ class IntakeIssueListCreateAPIEndpoint(BaseAPIView):
             name=issue_data.get("name"),
             description_json=description_json,
             description_html=safe_description_html,
-            priority=issue_data.get("priority", "none"),
+            priority=issue_data.get("priority", "medium"),
             project_id=project_id,
             state_id=triage_state.id,
         )

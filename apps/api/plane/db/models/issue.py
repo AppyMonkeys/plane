@@ -142,7 +142,7 @@ class Issue(ChangeTrackerMixin, ProjectBaseModel):
         max_length=30,
         choices=PRIORITY_CHOICES,
         verbose_name="Issue Priority",
-        default="none",
+        default="medium",
     )
     start_date = models.DateField(null=True, blank=True)
     target_date = models.DateField(null=True, blank=True)

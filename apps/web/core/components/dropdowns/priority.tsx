@@ -9,7 +9,7 @@ import { useRef, useState } from "react";
 import { usePopper } from "react-popper";
 import { SignalHigh } from "lucide-react";
 import { Combobox } from "@headlessui/react";
-import { ISSUE_PRIORITIES } from "@plane/constants";
+import { IS_JIRA_PRIORITY_ENABLED, ISSUE_PRIORITIES } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 // types
 import { PriorityIcon } from "@plane/propel/icons";
@@ -112,9 +112,9 @@ function BorderButton(props: ButtonProps) {
                   // increase the icon size if text is hidden
                   "h-3.5 w-3.5": hideText,
                   // centre align the icons if text is hidden
-                  "translate-x-[0.0625rem]": hideText && priority === "high",
-                  "translate-x-0.5": hideText && priority === "medium",
-                  "translate-x-1": hideText && priority === "low",
+                  "translate-x-[0.0625rem]": !IS_JIRA_PRIORITY_ENABLED && hideText && priority === "high",
+                  "translate-x-0.5": !IS_JIRA_PRIORITY_ENABLED && hideText && priority === "medium",
+                  "translate-x-1": !IS_JIRA_PRIORITY_ENABLED && hideText && priority === "low",
                   // highlight the icon if priority is urgent
                 })}
               />
@@ -125,8 +125,9 @@ function BorderButton(props: ButtonProps) {
         {!hideText && (
           <span
             className={cn("flex-grow truncate text-body-xs-medium", {
-              "text-secondary": priority && priority !== "none",
-              "text-placeholder": !priority || priority === "none",
+              // "none" is a real level ("Lowest") in Jira mode, not an empty value
+              "text-secondary": priority && (IS_JIRA_PRIORITY_ENABLED || priority !== "none"),
+              "text-placeholder": !priority || (!IS_JIRA_PRIORITY_ENABLED && priority === "none"),
             })}
           >
             {priorityDetails?.title ?? placeholder}
@@ -167,7 +168,10 @@ function BackgroundButton(props: ButtonProps) {
   const { t } = useTranslation();
 
   return (
-    <Tooltip label={`${t("priority")}: ${t(priorityDetails?.key ?? "none")}`} disabled={!showTooltip || isMobile}>
+    <Tooltip
+      label={`${t("priority")}: ${priorityDetails?.title ?? t("common.none")}`}
+      disabled={!showTooltip || isMobile}
+    >
       <div
         className={cn(
           "flex h-full items-center gap-1.5 rounded-sm px-2 py-0.5",
@@ -196,9 +200,9 @@ function BackgroundButton(props: ButtonProps) {
                   // increase the icon size if text is hidden
                   "h-3.5 w-3.5": hideText,
                   // centre align the icons if text is hidden
-                  "translate-x-[0.0625rem]": hideText && priority === "high",
-                  "translate-x-0.5": hideText && priority === "medium",
-                  "translate-x-1": hideText && priority === "low",
+                  "translate-x-[0.0625rem]": !IS_JIRA_PRIORITY_ENABLED && hideText && priority === "high",
+                  "translate-x-0.5": !IS_JIRA_PRIORITY_ENABLED && hideText && priority === "medium",
+                  "translate-x-1": !IS_JIRA_PRIORITY_ENABLED && hideText && priority === "low",
                   // highlight the icon if priority is urgent
                 })}
               />
@@ -209,8 +213,9 @@ function BackgroundButton(props: ButtonProps) {
         {!hideText && (
           <span
             className={cn("flex-grow truncate text-body-xs-medium", {
-              "text-secondary": priority && priority !== "none",
-              "text-placeholder": !priority || priority === "none",
+              // "none" is a real level ("Lowest") in Jira mode, not an empty value
+              "text-secondary": priority && (IS_JIRA_PRIORITY_ENABLED || priority !== "none"),
+              "text-placeholder": !priority || (!IS_JIRA_PRIORITY_ENABLED && priority === "none"),
             })}
           >
             {priorityDetails?.title ?? t("common.priority") ?? placeholder}
@@ -276,9 +281,9 @@ function TransparentButton(props: ButtonProps) {
                   // increase the icon size if text is hidden
                   "h-3.5 w-3.5": hideText,
                   // centre align the icons if text is hidden
-                  "translate-x-[0.0625rem]": hideText && priority === "high",
-                  "translate-x-0.5": hideText && priority === "medium",
-                  "translate-x-1": hideText && priority === "low",
+                  "translate-x-[0.0625rem]": !IS_JIRA_PRIORITY_ENABLED && hideText && priority === "high",
+                  "translate-x-0.5": !IS_JIRA_PRIORITY_ENABLED && hideText && priority === "medium",
+                  "translate-x-1": !IS_JIRA_PRIORITY_ENABLED && hideText && priority === "low",
                   // highlight the icon if priority is urgent
                 })}
               />
@@ -289,8 +294,9 @@ function TransparentButton(props: ButtonProps) {
         {!hideText && (
           <span
             className={cn("flex-grow truncate text-body-xs-medium", {
-              "text-secondary": priority && priority !== "none",
-              "text-placeholder": !priority || priority === "none",
+              // "none" is a real level ("Lowest") in Jira mode, not an empty value
+              "text-secondary": priority && (IS_JIRA_PRIORITY_ENABLED || priority !== "none"),
+              "text-placeholder": !priority || (!IS_JIRA_PRIORITY_ENABLED && priority === "none"),
             })}
           >
             {priorityDetails?.title ?? t("common.priority") ?? placeholder}
@@ -427,6 +433,7 @@ export function PriorityDropdown(props: Props) {
   );
 
   return (
+    // oxlint-disable-next-line jsx_a11y/no-static-element-interactions
     <ComboDropDown
       as="div"
       ref={dropdownRef}

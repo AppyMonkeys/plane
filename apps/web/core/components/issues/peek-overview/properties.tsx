@@ -6,6 +6,7 @@
 
 import { observer } from "mobx-react";
 // i18n
+import { IS_JIRA_PRIORITY_ENABLED } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 // ui icons
 import {
@@ -119,7 +120,7 @@ export const PeekOverviewProperties = observer(function PeekOverviewProperties(p
             buttonVariant="transparent-with-text"
             className="h-7.5 w-full grow rounded-sm"
             buttonContainerClassName="w-full text-left h-7.5"
-            buttonClassName={`text-body-xs-medium whitespace-nowrap [&_svg]:size-3.5 ${!issue?.priority || issue?.priority === "none" ? "text-placeholder" : ""}`}
+            buttonClassName={`text-body-xs-medium whitespace-nowrap [&_svg]:size-3.5 ${!issue?.priority || (!IS_JIRA_PRIORITY_ENABLED && issue?.priority === "none") ? "text-placeholder" : ""}`}
           />
         </SidebarPropertyListItem>
 

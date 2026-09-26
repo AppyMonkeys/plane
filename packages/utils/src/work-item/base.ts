@@ -9,7 +9,12 @@ import { isEmpty } from "lodash-es";
 import { v4 as uuidv4 } from "uuid";
 // plane imports
 import type { TIssueFilterPriorityObject, TIssuePriorities } from "@plane/constants";
-import { ISSUE_DISPLAY_FILTERS_BY_PAGE, ISSUE_PRIORITY_FILTERS, STATE_GROUPS } from "@plane/constants";
+import {
+  IS_JIRA_PRIORITY_ENABLED,
+  ISSUE_DISPLAY_FILTERS_BY_PAGE,
+  ISSUE_PRIORITY_FILTERS,
+  STATE_GROUPS,
+} from "@plane/constants";
 import type {
   IGanttBlock,
   IIssueDisplayFilterOptions,
@@ -148,7 +153,7 @@ export const createIssuePayload: (projectId: string, formData: Partial<TIssue>) 
   const payload: TIssue = {
     id: uuidv4(),
     project_id: projectId,
-    priority: "none",
+    priority: IS_JIRA_PRIORITY_ENABLED ? "medium" : "none",
     label_ids: [],
     assignee_ids: [],
     sub_issues_count: 0,
