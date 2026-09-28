@@ -112,7 +112,10 @@ fi
 storage_ok=1
 if [ -n "$STORAGE_VOLUME" ]; then
   echo "[backup] $(date -Iseconds) archiving uploads (plane-minio is stopped, reading the volume directly)..."
-  { docker run --rm -v "$STORAGE_VOLUME":/source_storage:ro alpine tar -cf - -C /source_storage . 2>"$work_dir/storage_tar.err"; echo $? > "$work_dir/storage_tar.rc"; } \
+  # --log-driver none: without it Docker also writes the whole tar stream (JSON-escaped,
+  # ~4x its size) into the container's json-file log while piping it -- a few GB of
+  # uploads filled the disk mid-backup and crashed other containers (RabbitMQ).
+  { docker run --rm --log-driver none -v "$STORAGE_VOLUME":/source_storage:ro alpine tar -cf - -C /source_storage . 2>"$work_dir/storage_tar.err"; echo $? > "$work_dir/storage_tar.rc"; } \
     | aws s3 cp - "s3://${S3_BUCKET}/${S3_PREFIX}/${ts}/uploads.tar" 2>"$work_dir/storage_s3.err"
   storage_s3_rc=$?
   tar_rc=$(cat "$work_dir/storage_tar.rc" 2>/dev/null || echo 1)
