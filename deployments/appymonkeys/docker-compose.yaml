@@ -270,20 +270,8 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
-  # Replaced by real S3 (see AWS_S3_* in .env, and storage.py's IAM-role
-  # fallback) -- kept here, commented, in case of rollback. The old `uploads`
-  # named volume is left declared below (untouched, not deleted) as the
-  # rollback's data.
-  # plane-minio:
-  #   image: quay.io/minio/minio:latest
-  #   command: server /export --console-address ":9090"
-  #   restart: unless-stopped
-  #   deploy:
-  #     replicas: 1
-  #   environment:
-  #     <<: *minio-env
-  #   volumes:
-  #     - uploads:/export
+  # File uploads live in real S3 (see AWS_S3_* in .env, and storage.py's
+  # IAM-role fallback) -- there is no MinIO service or local uploads volume.
 
   # Comment this if you already have a reverse proxy running
   # No host ports published: edge-proxy/ is the single thing that binds
@@ -311,13 +299,12 @@ services:
 
   # Backups run on a host cron job (backup-scripts/run-backup.sh), not as a
   # compose service -- it stops this stack (except plane-db), streams a
-  # pg_dump + a tar of the uploads volume straight to S3, then restarts
+  # pg_dump straight to S3 (uploads are already in S3), then restarts
   # every service one at a time. See backup-scripts/README.md.
 
 volumes:
   pgdata:
   redisdata:
-  uploads:
   logs_api:
   logs_worker:
   logs_beat-worker:

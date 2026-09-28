@@ -8,6 +8,11 @@ Two scripts:
 - **`restore.sh`** -- a one-shot script you run by hand to restore a
   backup, from either S3 or a local `backup/<timestamp>/` directory.
 
+> **Current setup: uploads live in real S3**, so there is no `plane-minio`
+> service or local uploads volume. `run-backup.sh` detects that and backs up
+> only the database (logging "skipping uploads archive"); the uploads-volume
+> steps below apply only if a `plane-minio` service is added back.
+
 ## How run-backup.sh works
 
 It cannot run _inside_ docker-compose as a service, because it needs to

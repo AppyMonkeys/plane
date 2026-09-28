@@ -11,7 +11,7 @@ Everything needed to stand this up from a bare clone lives right here:
 
 ```
 deployments/appymonkeys/
-├── docker-compose.yaml   # the whole stack: web, api, db, redis, minio, proxy, backup...
+├── docker-compose.yaml   # the whole stack: web, api, worker, db, redis, rabbitmq, proxy...
 ├── .env.example          # copy to .env and fill in
 └── backup-scripts/
     ├── backup.sh          # runs inside the `backup` service -- see backup-scripts/README.md
@@ -57,11 +57,10 @@ That's the whole thing. `docker compose ps` shows every container;
 - **`CUSTOM_BUILD`**: this compose file always builds from source
   regardless of this flag (kept only because some Dockerfiles reference
   it); there's no prebuilt-image mode here.
-- **Small disks**: the `uploads` MinIO volume grows with every attachment
-  users upload and can reach many GB. Don't assume a host has room to hold
-  a _second_ copy of it (e.g. for a local backup file) on top of the live
-  volume -- see backup-scripts/README.md for how backups avoid that
-  problem by streaming straight to S3.
+- **File uploads live in S3** (`AWS_S3_*` in `.env`), not on the host --
+  there's no MinIO service or local uploads volume. Backups still stream
+  straight to S3 rather than writing local files; see
+  backup-scripts/README.md.
 
 ## Rebuilding after a code change
 
