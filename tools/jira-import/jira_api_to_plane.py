@@ -7,7 +7,8 @@ Plane's public API (X-Api-Key). It never touches either database directly.
 
 What it brings over, per ticket:
   - title, description (Jira-rendered HTML), original created date
-  - Jira status -> Plane state, priority, issue type + labels -> Plane labels
+  - Jira status -> Plane state, priority, labels -> Plane labels; issue type -> Plane work item type
+    when the project has types switched on (a label otherwise)
   - people: the Jira reporter becomes the Plane creator and the Jira assignee
     the Plane assignee, when they have an account in the target project (see
     PEOPLE below; accounts are created with provision_plane_users.py). Anyone
@@ -362,6 +363,15 @@ class Importer:
         self.member_by_email = {(m.get("email") or "").lower(): m["id"] for m in members if m.get("email")}
         log(f"  {len(self.states)} states, {len(self.labels)} labels, {len(self.member_by_email)} project members")
 
+        # Projects with work item types on get the Jira issue type as a real type instead of a label.
+        self.types: dict[str, str] | None = None
+        if self.project.get("is_issue_type_enabled"):
+            response = self.plane.call("GET", f"projects/{self.pid}/work-item-types/")
+            if response.status_code != 200:
+                raise RuntimeError(f"could not list work item types: {response.status_code} {response.text[:200]}")
+            self.types = {t["name"].lower(): t["id"] for t in response.json()}
+            log(f"  work item types are on: {len(self.types)} types")
+
     def state_id(self, jira_status: str) -> str:
         name = STATUS_TO_STATE.get(jira_status, FALLBACK_STATE)
         if name not in self.states:
@@ -378,6 +388,25 @@ class Importer:
                 self.states[name] = response.json()["id"]
                 log(f"  created state {name!r}")
         return self.states[name]
+
+    def type_id(self, fields: dict) -> str | None:
+        """Plane work item type for the Jira issue type, or None when the project doesn't use types."""
+        name = (fields.get("issuetype") or {}).get("name")
+        if self.types is None or not name:
+            return None
+        if name.lower() not in self.types:
+            if self.args.dry_run:
+                log(f"  [dry-run] would create work item type {name!r}")
+                self.types[name.lower()] = f"dry-run-{name}"
+            else:
+                response = self.plane.call("POST", f"projects/{self.pid}/work-item-types/", json={"name": name})
+                if response.status_code not in (201, 409) or not response.json().get("id"):
+                    raise RuntimeError(
+                        f"could not create work item type {name!r}: {response.status_code} {response.text[:200]}"
+                    )
+                self.types[name.lower()] = response.json()["id"]
+                log(f"  created work item type {name!r}")
+        return self.types[name.lower()]
 
     def label_ids(self, names: list[str]) -> list[str]:
         ids = []
@@ -479,6 +508,9 @@ class Importer:
                 "external_source": self.source,
                 "created_at": fields.get("created"),
             }
+            type_id = self.type_id(fields)
+            if type_id:
+                payload["type_id"] = type_id
             assignee = self.user_id(fields.get("assignee"))
             if assignee:
                 payload["assignees"] = [assignee]
@@ -526,11 +558,11 @@ class Importer:
         if not self.args.skip_attachments:
             self.import_attachments(key, issue_id, fields.get("attachment") or [])
 
-    @staticmethod
-    def jira_labels(fields: dict) -> list[str]:
+    def jira_labels(self, fields: dict) -> list[str]:
         names = list(fields.get("labels") or [])
+        # without work item types the issue type has no better home than a label
         issue_type = (fields.get("issuetype") or {}).get("name")
-        if issue_type and issue_type not in names:
+        if self.types is None and issue_type and issue_type not in names:
             names.append(issue_type)
         return names
 
