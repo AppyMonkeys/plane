@@ -1489,7 +1489,9 @@ class IssueCommentListCreateAPIEndpoint(BaseAPIView):
             issue_comment.created_at = request.data.get("created_at", timezone.now())
             issue_comment.created_by_id = request.data.get("created_by", request.user.id)
             issue_comment.actor_id = request.data.get("created_by", request.user.id)
-            issue_comment.save(update_fields=["created_at", "created_by"])
+            # actor is what the UI shows as the comment's author; it has to be in
+            # update_fields too or an imported comment stays attributed to the API key owner.
+            issue_comment.save(update_fields=["created_at", "created_by", "actor"])
 
             issue_activity.delay(
                 type="comment.activity.created",
