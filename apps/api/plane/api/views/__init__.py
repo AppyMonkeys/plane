@@ -15,6 +15,8 @@ from .state import (
     StateDetailAPIEndpoint,
 )
 
+from .issue_type import IssueTypeListCreateAPIEndpoint
+
 from .issue import (
     WorkspaceIssueAPIEndpoint,
     IssueListCreateAPIEndpoint,

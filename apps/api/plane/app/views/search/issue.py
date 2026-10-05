@@ -149,6 +149,7 @@ class IssueSearchEndpoint(BaseAPIView):
                 "id",
                 "start_date",
                 "sequence_id",
+                "type_id",
                 "project__name",
                 "project__identifier",
                 "project_id",

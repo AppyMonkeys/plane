@@ -42,7 +42,10 @@ from plane.db.models import (
     IssueDescriptionVersion,
     ProjectMember,
     EstimatePoint,
+    IssueType,
+    Project,
 )
+from plane.utils.issue_types import get_default_issue_type, project_issue_types
 from plane.utils.content_validator import (
     validate_html_content,
     validate_binary_data,
@@ -96,6 +99,9 @@ class IssueCreateSerializer(BaseSerializer):
         child=serializers.PrimaryKeyRelatedField(queryset=User.objects.all()),
         write_only=True,
         required=False,
+    )
+    type_id = serializers.PrimaryKeyRelatedField(
+        source="type", queryset=IssueType.objects.all(), required=False, allow_null=True
     )
     project_id = serializers.UUIDField(source="project.id", read_only=True)
     workspace_id = serializers.UUIDField(source="workspace.id", read_only=True)
@@ -194,6 +200,16 @@ class IssueCreateSerializer(BaseSerializer):
         ):
             raise serializers.ValidationError("Estimate point is not valid please pass a valid estimate_point_id")
 
+        # Check the work item type belongs to the project and can still be picked
+        issue_type = attrs.get("type")
+        if issue_type and not (self.instance and self.instance.type_id == issue_type.id):
+            if (
+                not project_issue_types(self.context.get("project_id"))
+                .filter(pk=issue_type.id, is_active=True)
+                .exists()
+            ):
+                raise serializers.ValidationError("Type is not valid please pass a valid type_id")
+
         return attrs
 
     def create(self, validated_data):
@@ -203,6 +219,13 @@ class IssueCreateSerializer(BaseSerializer):
         project_id = self.context["project_id"]
         workspace_id = self.context["workspace_id"]
         default_assignee_id = self.context["default_assignee_id"]
+
+        # Projects with work item types on give new work items the default type
+        if (
+            not validated_data.get("type")
+            and Project.objects.filter(pk=project_id, is_issue_type_enabled=True).exists()
+        ):
+            validated_data["type"] = get_default_issue_type(project_id)
 
         # Create Issue
         issue = Issue.objects.create(**validated_data, project_id=project_id)
@@ -759,6 +782,7 @@ class IssueIntakeSerializer(DynamicBaseSerializer):
             "name",
             "priority",
             "sequence_id",
+            "type_id",
             "project_id",
             "created_at",
             "label_ids",
@@ -794,6 +818,7 @@ class IssueSerializer(DynamicBaseSerializer):
             "start_date",
             "target_date",
             "sequence_id",
+            "type_id",
             "project_id",
             "parent_id",
             "cycle_id",
@@ -848,6 +873,7 @@ class IssueListDetailSerializer(serializers.Serializer):
             "completed_at": instance.completed_at,
             "estimate_point": instance.estimate_point_id,
             "priority": instance.priority,
+            "type_id": instance.type_id,
             "start_date": instance.start_date,
             "target_date": instance.target_date,
             "sequence_id": instance.sequence_id,

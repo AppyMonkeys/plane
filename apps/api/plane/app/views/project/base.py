@@ -40,6 +40,7 @@ from plane.db.models import (
     WorkspaceMember,
 )
 from plane.db.models.intake import IntakeIssueStatus
+from plane.utils.issue_types import seed_default_issue_types
 from plane.utils.host import base_host
 from plane.utils.order_queryset import PROJECT_ORDER_BY_ALLOWLIST, sanitize_order_by
 
@@ -188,6 +189,7 @@ class ProjectViewSet(BaseViewSet):
             "page_view",
             "inbox_view",
             "guest_view_all_features",
+            "is_issue_type_enabled",
             "project_lead",
             "network",
             "created_at",
@@ -355,6 +357,9 @@ class ProjectViewSet(BaseViewSet):
 
         if serializer.is_valid():
             serializer.save()
+            # Turning work item types on for the first time gives the project the default set
+            if serializer.validated_data.get("is_issue_type_enabled"):
+                seed_default_issue_types(project)
             if intake_view:
                 intake = Intake.objects.filter(project=project, is_default=True).first()
                 if not intake:

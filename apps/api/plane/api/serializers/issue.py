@@ -139,6 +139,17 @@ class IssueSerializer(BaseSerializer):
         ):
             raise serializers.ValidationError("State is not valid please pass a valid state_id")
 
+        # Check the work item type belongs to the project
+        if (
+            data.get("type")
+            and not IssueType.objects.filter(
+                pk=data.get("type").id,
+                project_issue_types__project_id=self.context.get("project_id"),
+                project_issue_types__deleted_at__isnull=True,
+            ).exists()
+        ):
+            raise serializers.ValidationError("Type is not valid please pass a valid type_id")
+
         # Check parent issue is from workspace as it can be cross workspace
         if (
             data.get("parent")
@@ -174,8 +185,12 @@ class IssueSerializer(BaseSerializer):
 
         if not issue_type:
             # Get default issue type
-            issue_type = IssueType.objects.filter(project_issue_types__project_id=project_id, is_default=True).first()
-            issue_type = issue_type
+            issue_type = IssueType.objects.filter(
+                project_issue_types__project_id=project_id,
+                project_issue_types__project__is_issue_type_enabled=True,
+                project_issue_types__deleted_at__isnull=True,
+                is_default=True,
+            ).first()
 
         issue = Issue.objects.create(**validated_data, project_id=project_id, type=issue_type)
 

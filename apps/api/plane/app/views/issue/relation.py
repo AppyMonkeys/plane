@@ -161,6 +161,7 @@ class IssueRelationViewSet(BaseViewSet):
             "sort_order",
             "priority",
             "sequence_id",
+            "type_id",
             "project_id",
             "label_ids",
             "assignee_ids",
