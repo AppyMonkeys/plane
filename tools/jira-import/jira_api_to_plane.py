@@ -330,8 +330,9 @@ class Importer:
         self.jira = jira
         self.plane = plane
         self.source = args.external_source
+        self.attachment_source = args.attachment_external_source
         self.state_path = Path(args.state_dir) / f"{args.jira_project}_to_{args.plane_project}.json"
-        self.state = {"issues": {}, "comments": {}, "attachments": {}, "parents_linked": {}}
+        self.state = {"issues": {}, "created_here": {}, "comments": {}, "attachments": {}, "parents_linked": {}}
         if self.state_path.is_file():
             self.state.update(json.loads(self.state_path.read_text()))
         self.stats = {k: 0 for k in ("created", "existing", "comments", "attachments", "parents", "failed")}
@@ -506,6 +507,7 @@ class Importer:
             elif response.status_code in (200, 201):
                 issue_id = response.json()["id"]
                 self.stats["created"] += 1
+                self.state["created_here"][key] = True
                 log(f"{key}: created ({payload['name'][:60]})")
             else:
                 raise RuntimeError(f"create failed: HTTP {response.status_code} {response.text[:300]}")
@@ -516,8 +518,11 @@ class Importer:
 
         if self.args.dry_run:
             return
+        # A ticket this script didn't create came from the earlier CSV import,
+        # whose comments carry no Jira id: compare text so they aren't repeated.
+        preexisting = key not in self.state["created_here"]
         if not self.args.skip_comments:
-            self.import_comments(key, issue_id, fields)
+            self.import_comments(key, issue_id, fields, preexisting)
         if not self.args.skip_attachments:
             self.import_attachments(key, issue_id, fields.get("attachment") or [])
 
@@ -536,13 +541,32 @@ class Importer:
         email = (person.get("emailAddress") or PEOPLE.get(person.get("displayName", ""), "")).lower()
         return self.member_by_email.get(email)
 
-    def import_comments(self, key: str, issue_id: str, fields: dict) -> None:
+    @staticmethod
+    def text_key(markup: str) -> str:
+        """Comparable form of a comment: tags and whitespace removed, lower-cased."""
+        text = html.unescape(re.sub(r"<[^>]+>", " ", markup or ""))
+        return re.sub(r"\s+", "", text).lower()[:120]
+
+    def import_comments(self, key: str, issue_id: str, fields: dict, preexisting: bool = False) -> None:
         summary = fields.get("comment") or {}
         if not summary.get("total"):
             return
-        for comment in self.jira.comments(key):
+        jira_comments = [c for c in self.jira.comments(key) if str(c["id"]) not in self.state["comments"]]
+        if not jira_comments:
+            return
+        already_there = set()
+        if preexisting:
+            existing = self.plane.list_all(f"projects/{self.pid}/work-items/{issue_id}/comments/")
+            already_there = {self.text_key(c.get("comment_html") or c.get("comment_stripped") or "") for c in existing}
+            already_there.discard("")
+        for comment in jira_comments:
             comment_id = str(comment["id"])
-            if comment_id in self.state["comments"]:
+            # The earlier CSV import stored comments as "Author Name: text" with raw
+            # Jira markup, so compare on the opening of the text, not the whole of it.
+            opening = self.text_key(comment.get("renderedBody") or "")[:40]
+            if opening and any(opening in existing_key for existing_key in already_there):
+                self.state["comments"][comment_id] = True  # the earlier import already has it
+                self.save_state()
                 continue
             author = (comment.get("author") or {}).get("displayName", "Unknown")
             author_id = self.user_id(comment.get("author"))
@@ -589,30 +613,39 @@ class Importer:
 
     def upload_attachment(self, key, issue_id, attachment_id, url, name, mime, size) -> None:
         base = f"projects/{self.pid}/work-items/{issue_id}/attachments/"
+        # Ask Plane for the upload slot first: a 409 means this Jira attachment is
+        # already on the ticket (this run or the earlier import), so nothing is
+        # downloaded or uploaded twice.
+        body = {
+            "name": name,
+            "type": mime,
+            "size": size,
+            "external_id": attachment_id,
+            "external_source": self.attachment_source,
+        }
+        response = self.plane.call("POST", base, json=body)
+        if response.status_code == 400 and "Invalid file type" in response.text and mime != FALLBACK_MIME:
+            mime = body["type"] = FALLBACK_MIME
+            response = self.plane.call("POST", base, json=body)
+        if response.status_code == 409:
+            self.stats["attachments"] -= 1  # counted by the caller; it was already there
+            self.stats["attachments_existing"] = self.stats.get("attachments_existing", 0) + 1
+            return
+        if response.status_code != 200:
+            raise RuntimeError(f"upload slot failed: HTTP {response.status_code} {response.text[:200]}")
+        slot = response.json()
+        granted = (slot.get("attachment") or {}).get("attributes", {}).get("size")
+        if granted is not None and int(granted) < size:
+            # Plane capped the size: the file is over FILE_SIZE_LIMIT / VIDEO_FILE_SIZE_LIMIT
+            self.plane.call("DELETE", f"{base}{slot['asset_id']}/", ok=(200, 204))
+            raise RuntimeError(f"{size / 1e6:.1f} MB is over Plane's upload limit ({int(granted) / 1e6:.0f} MB)")
+
         with tempfile.TemporaryDirectory(prefix="jira-import-") as folder:
             local = Path(folder) / "file"
             actual_size = self.jira.download(url, local)
-            body = {
-                "name": name,
-                "type": mime,
-                "size": actual_size or size,
-                "external_id": attachment_id,
-                "external_source": self.source,
-            }
-            response = self.plane.call("POST", base, json=body)
-            if response.status_code == 400 and "Invalid file type" in response.text and mime != FALLBACK_MIME:
-                mime = body["type"] = FALLBACK_MIME
-                response = self.plane.call("POST", base, json=body)
-            if response.status_code == 409:
-                return  # already uploaded in an earlier run
-            if response.status_code != 200:
-                raise RuntimeError(f"upload slot failed: HTTP {response.status_code} {response.text[:200]}")
-            slot = response.json()
-            granted = (slot.get("attachment") or {}).get("attributes", {}).get("size")
-            if granted is not None and int(granted) < actual_size:
-                # Plane capped the size: the file is over FILE_SIZE_LIMIT / VIDEO_FILE_SIZE_LIMIT
+            if actual_size != size:
                 self.plane.call("DELETE", f"{base}{slot['asset_id']}/", ok=(200, 204))
-                raise RuntimeError(f"{actual_size / 1e6:.1f} MB is over Plane's upload limit ({int(granted) / 1e6:.0f} MB)")
+                raise RuntimeError(f"downloaded {actual_size} bytes but Jira reported {size}")
 
             upload = slot["upload_data"]
             multipart = MultipartFile(upload["fields"], local, name, mime)
@@ -676,7 +709,9 @@ class Importer:
         log(
             f"Done: {count} tickets in {minutes:.1f} min | created {self.stats['created']}, "
             f"already there {self.stats['existing']}, comments {self.stats['comments']}, "
-            f"attachments {self.stats['attachments']}, parents linked later {self.stats['parents']}, "
+            f"attachments {self.stats['attachments']} "
+            f"(+{self.stats.get('attachments_existing', 0)} already there), "
+            f"parents linked later {self.stats['parents']}, "
             f"failed {self.stats['failed']}"
         )
         log(f"API calls: Plane {self.plane.http.calls}, Jira {self.jira.http.calls}")
@@ -703,6 +738,12 @@ def main() -> int:
         default="jira_csv_import",
         help="Tag stored on created items. Defaults to the earlier import's tag so tickets it "
         "already brought in are recognised as existing (no duplicates).",
+    )
+    parser.add_argument(
+        "--attachment-external-source",
+        default="jira_attachment_import",
+        help="Tag stored on uploaded attachments (external_id = Jira attachment id). Defaults to "
+        "the earlier attachment import's tag so files it already uploaded are not uploaded again.",
     )
     parser.add_argument(
         "--plane-rpm", type=float, default=45, help="Max Plane API requests per minute (server limit is 60)"
