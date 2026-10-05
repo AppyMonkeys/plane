@@ -38,6 +38,8 @@ x-aws-s3-env: &aws-s3-env
 x-proxy-env: &proxy-env
   APP_DOMAIN: ${APP_DOMAIN:-localhost}
   FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT:-5242880}
+  # Separate, larger cap for video attachments (see plane/utils/file_size.py)
+  VIDEO_FILE_SIZE_LIMIT: ${VIDEO_FILE_SIZE_LIMIT:-10485760}
   CERT_EMAIL: ${CERT_EMAIL}
   CERT_ACME_CA: ${CERT_ACME_CA}
   CERT_ACME_DNS: ${CERT_ACME_DNS}
