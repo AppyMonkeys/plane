@@ -37,6 +37,7 @@ import { useFavorite } from "@/hooks/store/use-favorite";
 import { useMember } from "@/hooks/store/use-member";
 import { useProject } from "@/hooks/store/use-project";
 import { useProjectState } from "@/hooks/store/use-project-state";
+import { useWorkItemType } from "@/hooks/store/use-work-item-type";
 import { useWorkspace } from "@/hooks/store/use-workspace";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
 import { usePlatformOS } from "@/hooks/use-platform-os";
@@ -62,6 +63,7 @@ export const WorkspaceAuthWrapper = observer(function WorkspaceAuthWrapper(props
   const { loader, workspaceInfoBySlug, fetchUserWorkspaceInfo, fetchUserProjectPermissions, allowPermissions } =
     useUserPermissions();
   const { fetchWorkspaceStates } = useProjectState();
+  const { fetchWorkspaceWorkItemTypes } = useWorkItemType();
   // derived values
   const canPerformWorkspaceMemberActions = allowPermissions(
     [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
@@ -113,6 +115,13 @@ export const WorkspaceAuthWrapper = observer(function WorkspaceAuthWrapper(props
     { revalidateIfStale: false, revalidateOnFocus: false }
   );
 
+  // fetch work item types of every project, so type icons can render anywhere
+  useSWR(
+    workspaceSlug ? `WORKSPACE_WORK_ITEM_TYPES_${workspaceSlug.toString().toUpperCase()}` : null,
+    workspaceSlug ? () => fetchWorkspaceWorkItemTypes(workspaceSlug.toString()) : null,
+    { revalidateIfStale: false, revalidateOnFocus: false }
+  );
+
   // fetch workspace sidebar preferences
   useSWR(
     workspaceSlug ? WORKSPACE_SIDEBAR_PREFERENCES(workspaceSlug.toString()) : null,
@@ -159,14 +168,16 @@ export const WorkspaceAuthWrapper = observer(function WorkspaceAuthWrapper(props
             </div>
             <div className="relative flex items-center gap-2">
               <div className="text-13 font-medium">{currentUser?.email}</div>
-              <div
+              <button
+                type="button"
+                aria-label="Sign out"
                 className="relative flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-sm hover:bg-layer-1"
                 onClick={handleSignOut}
               >
                 <Tooltip label={"Sign out"} alignOffset={8} disabled={isMobile}>
                   <LogOutOutline width={14} height={14} />
                 </Tooltip>
-              </div>
+              </button>
             </div>
           </div>
           <div className="relative flex h-full w-full flex-grow flex-col items-center justify-center space-y-3">

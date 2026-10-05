@@ -8,6 +8,7 @@ export * from "./default";
 export * from "./name";
 export * from "./description";
 export * from "./state";
+export * from "./type";
 export * from "./assignee";
 export * from "./priority";
 export * from "./estimate";

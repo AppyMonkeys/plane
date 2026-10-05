@@ -32,6 +32,16 @@ export const JIRA_TERMINOLOGY_OVERRIDES: Record<string, Record<string, unknown>>
     work_item_types: {
       label: "Work Types",
       label_lowercase: "work types",
+      singular: "Work Type",
+      toast: {
+        change_type_error: "The work type could not be changed. Please try again.",
+      },
+      settings: {
+        toggle_title: "Enable work types",
+        delete: {
+          title: "Delete work type",
+        },
+      },
     },
   },
   "project-settings": {

@@ -69,6 +69,8 @@ import { ThemeStore } from "./theme.store";
 import type { IUserStore } from "./user";
 import { UserStore } from "./user";
 import type { IWorkspaceRootStore } from "./workspace";
+import type { IWorkItemTypeStore } from "./work-item-type.store";
+import { WorkItemTypeStore } from "./work-item-type.store";
 
 enableStaticRendering(typeof window === "undefined");
 
@@ -85,6 +87,7 @@ export class CoreRootStore {
   issue: IIssueRootStore;
   state: IStateStore;
   label: ILabelStore;
+  workItemType: IWorkItemTypeStore;
   dashboard: IDashboardStore;
   analytics: IAnalyticsStore;
   projectPages: IProjectPageStore;
@@ -122,6 +125,7 @@ export class CoreRootStore {
     this.issue = new IssueRootStore(this);
     this.state = new StateStore(this);
     this.label = new LabelStore(this);
+    this.workItemType = new WorkItemTypeStore(this);
     this.dashboard = new DashboardStore(this);
     this.multipleSelect = new MultipleSelectStore();
     this.projectInbox = new ProjectInboxStore(this);
@@ -157,6 +161,7 @@ export class CoreRootStore {
     this.issue = new IssueRootStore(this);
     this.state = new StateStore(this);
     this.label = new LabelStore(this);
+    this.workItemType = new WorkItemTypeStore(this);
     this.dashboard = new DashboardStore(this);
     this.projectInbox = new ProjectInboxStore(this);
     this.projectPages = new ProjectPageStore(this);

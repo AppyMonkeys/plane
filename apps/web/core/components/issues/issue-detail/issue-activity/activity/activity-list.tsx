@@ -16,6 +16,7 @@ import {
   IssueNameActivity,
   IssueDescriptionActivity,
   IssueStateActivity,
+  IssueTypeActivity,
   IssueAssigneeActivity,
   IssuePriorityActivity,
   IssueEstimateActivity,
@@ -56,6 +57,8 @@ export const IssueActivityItem = observer(function IssueActivityItem(props: TIss
       return <IssueDefaultActivity {...componentDefaultProps} />;
     case "state":
       return <IssueStateActivity {...componentDefaultProps} showIssue={false} />;
+    case "type":
+      return <IssueTypeActivity {...componentDefaultProps} showIssue={false} />;
     case "name":
       return <IssueNameActivity {...componentDefaultProps} />;
     case "description":

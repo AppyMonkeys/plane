@@ -290,6 +290,27 @@
           "cannot_delete_default_work_item_type": "Cannot delete default work item type",
           "cannot_delete_work_item_type_with_associated_work_items": "Cannot delete work item type with associated work items"
         }
+      },
+      "project_description": "Classify work as tasks, bugs, stories and more. Each type gets its own icon, shown next to the work item ID.",
+      "add_button": "Add type",
+      "toggle_title": "Enable work item types",
+      "toggle_description": "Give every work item a type. Turning this on for the first time adds a starter set you can change.",
+      "enable": "Enable",
+      "disable": "Disable",
+      "form": {
+        "name_placeholder": "Type name",
+        "description_placeholder": "Description (optional)",
+        "icon": "Icon",
+        "color": "Color",
+        "name_required": "Name is required",
+        "save_error": "The type could not be saved. Please try again."
+      },
+      "toast": {
+        "error": "Something went wrong. Please try again."
+      },
+      "delete": {
+        "title": "Delete work item type",
+        "description": "Are you sure you want to delete {name}? Types that are still used by work items cannot be deleted; disable them instead."
       }
     },
     "create": {
@@ -388,6 +409,10 @@
           "text": "Upgrade"
         }
       }
+    },
+    "singular": "Work item type",
+    "toast": {
+      "change_type_error": "The work item type could not be changed. Please try again."
     }
   },
   "work_item_type_hierarchy": {

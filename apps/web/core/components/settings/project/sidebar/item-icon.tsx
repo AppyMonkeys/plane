@@ -16,6 +16,7 @@ import {
   StateOutline,
   TriggerOutline,
   ViewsOutline,
+  WorkItemsOutline,
 } from "@makeplane/propel/icons";
 // plane imports
 import type { ISvgIcons } from "@plane/propel/icons";
@@ -32,6 +33,7 @@ export const PROJECT_SETTINGS_ICONS: Record<TProjectSettingsTabs, LucideIcon | R
   features_pages: PagesOutline,
   features_intake: IntakeOutline,
   states: StateOutline,
+  work_item_types: WorkItemsOutline,
   labels: LabelsOutline,
   estimates: EstimateOutline,
   automations: TriggerOutline,

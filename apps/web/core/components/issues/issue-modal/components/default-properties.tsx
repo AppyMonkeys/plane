@@ -27,9 +27,11 @@ import { StateDropdown } from "@/components/dropdowns/state/dropdown";
 import { ParentIssuesListModal } from "@/components/issues/parent-issues-list-modal";
 import { IssueLabelSelect } from "@/components/issues/select";
 import { IssueIdentifier } from "@/components/issues/issue-detail/issue-identifier";
+import { WorkItemTypeDropdown } from "@/components/work-item-types/dropdown";
 // hooks
 import { useProjectEstimates } from "@/hooks/store/estimates";
 import { useProject } from "@/hooks/store/use-project";
+import { useWorkItemType } from "@/hooks/store/use-work-item-type";
 import { useUserPermissions } from "@/hooks/store/user";
 import { usePlatformOS } from "@/hooks/use-platform-os";
 
@@ -71,6 +73,7 @@ export const IssueDefaultProperties = observer(function IssueDefaultProperties(p
   const { allowPermissions } = useUserPermissions();
   // derived values
   const projectDetails = getProjectById(projectId);
+  const { isWorkItemTypeEnabledForProject } = useWorkItemType();
 
   const { getIndex } = getTabIndex(ETabIndices.ISSUE_FORM, isMobile);
 
@@ -85,6 +88,25 @@ export const IssueDefaultProperties = observer(function IssueDefaultProperties(p
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      {projectId && isWorkItemTypeEnabledForProject(projectId) && (
+        <Controller
+          control={control}
+          name="type_id"
+          render={({ field: { value, onChange } }) => (
+            <div className="h-7">
+              <WorkItemTypeDropdown
+                projectId={projectId}
+                value={value}
+                onChange={(typeId) => {
+                  onChange(typeId);
+                  handleFormChange();
+                }}
+                tabIndex={getIndex("state_id")}
+              />
+            </div>
+          )}
+        />
+      )}
       <Controller
         control={control}
         name="state_id"
