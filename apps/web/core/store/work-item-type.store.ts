@@ -21,7 +21,7 @@ export interface IWorkItemTypeStore {
   // computed functions
   isWorkItemTypeEnabledForProject: (projectId: string | undefined | null) => boolean;
   getWorkItemTypeById: (typeId: string | undefined | null) => TWorkItemType | undefined;
-  getProjectWorkItemTypes: (projectId: string | undefined | null, activeOnly?: boolean) => TWorkItemType[];
+  getProjectWorkItemTypes: (projectId: string | undefined | null) => TWorkItemType[];
   getProjectDefaultWorkItemType: (projectId: string | undefined | null) => TWorkItemType | undefined;
   // actions
   fetchWorkspaceWorkItemTypes: (workspaceSlug: string) => Promise<TWorkItemType[]>;
@@ -75,21 +75,20 @@ export class WorkItemTypeStore implements IWorkItemTypeStore {
   getWorkItemTypeById = computedFn((typeId: string | undefined | null) => (typeId ? this.typeMap[typeId] : undefined));
 
   /**
-   * Work item types of a project, in display order
-   * @param activeOnly leave out the disabled ones (the ones that can no longer be picked)
+   * Work item types of a project, in display order -- including the disabled ones (which stay on the work
+   * items that already have them but can no longer be picked).
+   * Note: computedFn needs the same number of arguments on every call, so this takes the project id only.
    */
-  getProjectWorkItemTypes = computedFn((projectId: string | undefined | null, activeOnly: boolean = false) => {
+  getProjectWorkItemTypes = computedFn((projectId: string | undefined | null) => {
     if (!projectId) return [];
     return sortBy(
-      Object.values(this.typeMap).filter(
-        (type) => type.project_ids?.includes(projectId) && (!activeOnly || type.is_active)
-      ),
+      Object.values(this.typeMap).filter((type) => type.project_ids?.includes(projectId)),
       ["level", "created_at"]
     );
   });
 
   getProjectDefaultWorkItemType = computedFn((projectId: string | undefined | null) =>
-    this.getProjectWorkItemTypes(projectId, true).find((type) => type.is_default)
+    this.getProjectWorkItemTypes(projectId).find((type) => type.is_default && type.is_active)
   );
 
   fetchWorkspaceWorkItemTypes = async (workspaceSlug: string) => {
