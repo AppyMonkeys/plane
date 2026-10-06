@@ -210,15 +210,34 @@ class JiraCompatBaseView(BaseAPIView):
             project__project_projectmember__is_active=True,
         ).distinct()
 
+    def projects_imported_from(self, jira_project_key):
+        """Projects holding tickets imported from the Jira project with this key.
+
+        A tool still configured with the old Jira key ("LOK") keeps working after the tickets moved
+        to a Plane project with another identifier ("LOKKO"): imported work items remember their
+        Jira key as external_id. Only consulted when no Plane project goes by that key itself.
+        """
+        cache = self.__dict__.setdefault("_imported_projects", {})
+        key = (jira_project_key or "").strip().upper()
+        if key not in cache:
+            if not key or self.visible_projects().filter(identifier__iexact=key).exists():
+                cache[key] = []
+            else:
+                cache[key] = list(
+                    Issue.objects.filter(external_id__istartswith=f"{key}-", project__in=self.visible_projects())
+                    .values_list("project_id", flat=True)
+                    .distinct()
+                )
+        return cache[key]
+
     def get_issue(self, key):
         match = ISSUE_KEY_RE.match(key or "")
         if not match:
             return None
-        return (
-            self.with_issue_details(self.visible_issues())
-            .filter(project__identifier__iexact=match.group(1), sequence_id=int(match.group(2)))
-            .first()
-        )
+        issues = self.with_issue_details(self.visible_issues())
+        issue = issues.filter(project__identifier__iexact=match.group(1), sequence_id=int(match.group(2))).first()
+        # an old Jira key ("LOK-6021") finds the work item that was imported from it
+        return issue or issues.filter(external_id__iexact=key).first()
 
     def can_edit(self, issue):
         return ProjectMember.objects.filter(
@@ -276,6 +295,7 @@ class JiraCompatBaseView(BaseAPIView):
             lookups = Q()
             for value in values:
                 lookups |= Q(project__identifier__iexact=value) | Q(project__name__iexact=value)
+                lookups |= Q(project_id__in=self.projects_imported_from(value))
             return self.membership_q(clause, lookups)
 
         if field in ("key", "issuekey", "issue", "id"):

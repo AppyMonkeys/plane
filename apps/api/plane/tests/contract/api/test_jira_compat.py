@@ -219,6 +219,33 @@ class TestJiraCompatSearch:
 
 
 @pytest.mark.contract
+class TestJiraCompatOldJiraKeys:
+    """A tool still set to the Jira project key keeps working after the import into Plane."""
+
+    @pytest.fixture
+    def imported(self, tickets):
+        Issue.objects.filter(pk=tickets["crash"].id).update(external_id="LOK-6021", external_source="jira_csv_import")
+        return tickets
+
+    @pytest.mark.django_db
+    def test_search_by_the_old_project_key(self, jira_client, imported):
+        response = search(jira_client, 'project = "LOK" AND assignee = currentUser() ORDER BY updated DESC')
+
+        assert sorted(keys(response)) == ["LOKKO-1", "LOKKO-2"]
+
+    @pytest.mark.django_db
+    def test_issue_by_its_old_jira_key(self, jira_client, imported):
+        response = jira_client.get(f"{BASE}/issue/LOK-6021")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["key"] == "LOKKO-1"
+
+    @pytest.mark.django_db
+    def test_unknown_project_key_still_finds_nothing(self, jira_client, imported):
+        assert keys(search(jira_client, 'project = "NOPE"')) == []
+
+
+@pytest.mark.contract
 class TestJiraCompatIssue:
     @pytest.mark.django_db
     def test_issue_by_key(self, jira_client, tickets):
