@@ -191,6 +191,13 @@ class IssueFilterSet(BaseFilterSet):
     updated_at__exact = filters.DateFilter(field_name="updated_at", lookup_expr="date")
     updated_at__range = DateCSVRangeFilter(field_name="updated_at", lookup_expr="date__range")
 
+    # Timestamp bounds for sync-style queries ("everything updated since my last poll").
+    # These take an ISO 8601 datetime and compare the exact instant, unlike the date filters above.
+    created_at__gte = filters.IsoDateTimeFilter(field_name="created_at", lookup_expr="gte")
+    created_at__lte = filters.IsoDateTimeFilter(field_name="created_at", lookup_expr="lte")
+    updated_at__gte = filters.IsoDateTimeFilter(field_name="updated_at", lookup_expr="gte")
+    updated_at__lte = filters.IsoDateTimeFilter(field_name="updated_at", lookup_expr="lte")
+
     class Meta:
         model = Issue
         fields = {

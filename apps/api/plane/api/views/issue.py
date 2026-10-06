@@ -30,6 +30,7 @@ from django.conf import settings
 
 # Third party imports
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 # drf-spectacular imports
@@ -80,6 +81,7 @@ from plane.db.models import (
 )
 from plane.settings.storage import S3Storage
 from plane.utils.file_size import get_max_file_size
+from plane.utils.filters import ComplexFilterBackend, IssueFilterSet
 from plane.utils.path_validator import sanitize_filename
 from plane.utils.order_queryset import (
     ACTIVITY_ORDER_BY_ALLOWLIST,
@@ -254,6 +256,10 @@ class WorkspaceIssueAPIEndpoint(BaseAPIView):
             )
 
 
+# Filters whose value is a user id; `me` is accepted there as shorthand for the calling user.
+USER_FILTER_FIELDS = {"assignee_id", "created_by_id", "mention_id", "subscriber_id"}
+
+
 class IssueListCreateAPIEndpoint(BaseAPIView):
     """
     This viewset provides `list` and `create` on issue level
@@ -264,6 +270,37 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
     permission_classes = [ProjectEntityPermission]
     serializer_class = IssueSerializer
     use_read_replica = True
+    # allowlist of filterable fields for the `filters` / flat filter query parameters
+    filterset_class = IssueFilterSet
+
+    def get_filter_data(self, request):
+        """Combine the two ways of filtering the list into one filter tree.
+
+        - `filters`: a JSON tree, the same format the web app uses, e.g.
+          {"and": [{"state_id__in": "id1,id2"}, {"not": {"priority": "low"}}]}
+        - flat query parameters named after a filter, e.g.
+          ?assignee_id=me&priority__in=urgent,high&updated_at__gte=2026-10-01T00:00:00Z
+          (`me` stands for the calling user wherever a user id is expected)
+        Everything given is ANDed together.
+        """
+        conditions = []
+
+        raw_filters = request.GET.get("filters")
+        if raw_filters:
+            try:
+                conditions.append(json.loads(raw_filters))
+            except json.JSONDecodeError:
+                raise ValidationError({"filters": "Invalid JSON. Expected a JSON object."})
+
+        for name in self.filterset_class.base_filters:
+            value = request.GET.get(name)
+            if value in (None, ""):
+                continue
+            if name.split("__")[0] in USER_FILTER_FIELDS:
+                value = ",".join(str(request.user.id) if part.strip() == "me" else part for part in value.split(","))
+            conditions.append({name: value})
+
+        return {"and": conditions} if conditions else None
 
     def get_queryset(self):
         return (
@@ -315,16 +352,14 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
         Supports filtering, ordering, and field selection through query parameters.
         """
 
-        unsupported_filters = [param for param in ("pql", "filters") if request.GET.get(param)]
-        if unsupported_filters:
+        if request.GET.get("pql"):
             return Response(
                 {
                     "pql": (
-                        "PQL and structured filters are not supported on this Plane edition. "
-                        "Remove the pql/filters parameter and filter results client-side, or use "
-                        "a Plane edition that supports work item query filtering."
+                        "PQL is not supported on this Plane edition. Use the `filters` parameter or the "
+                        "flat filter parameters (e.g. assignee_id, state_id__in, updated_at__gte) instead."
                     ),
-                    "unsupported_parameters": unsupported_filters,
+                    "unsupported_parameters": ["pql"],
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -381,7 +416,19 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
             )
         )
 
+        filter_data = self.get_filter_data(request)
+        if filter_data:
+            issue_queryset = ComplexFilterBackend().filter_queryset(
+                request, issue_queryset, self, filter_data=filter_data
+            )
+
         total_issue_queryset = Issue.issue_objects.filter(project_id=project_id, workspace__slug=slug)
+        if filter_data:
+            total_issue_queryset = (
+                ComplexFilterBackend()
+                .filter_queryset(request, total_issue_queryset, self, filter_data=filter_data)
+                .distinct()
+            )
 
         # Priority Ordering
         if order_by_param == "priority" or order_by_param == "-priority":
@@ -2268,7 +2315,7 @@ class IssueSearchEndpoint(BaseAPIView):
             return Response({"issues": []}, status=status.HTTP_200_OK)
 
         # Build search query
-        fields = ["name", "sequence_id", "project__identifier"]
+        fields = ["name", "sequence_id", "project__identifier", "description_stripped"]
         q = Q()
         for field in fields:
             if field == "sequence_id":

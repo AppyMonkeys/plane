@@ -33,6 +33,19 @@ def user_data():
     }
 
 
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    """Every test starts with a clean throttle history.
+
+    The public API allows 60 requests a minute per API key and all tests share one key, so a full
+    run used to trip the limit and fail whichever tests happened to come after the 60th request.
+    """
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+
+
 @pytest.fixture
 def create_user(db, user_data):
     """Create and return a user instance"""
