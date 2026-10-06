@@ -19,6 +19,7 @@ import { useTableKeyboardNavigation } from "@/hooks/use-table-keyboard-navigatio
 // local imports
 import type { TRenderQuickActions } from "../list/list-view-types";
 import { getDisplayPropertiesCount } from "../utils";
+import { applyStoredColumnWidths } from "./column-resize";
 import { SpreadsheetIssueRow } from "./issue-row";
 import { SpreadsheetHeader } from "./spreadsheet-header";
 
@@ -106,12 +107,18 @@ export const SpreadsheetTable = observer(function SpreadsheetTable(props: Props)
 
   const handleKeyBoardNavigation = useTableKeyboardNavigation();
 
+  // column widths the user chose earlier (see column-resize.tsx)
+  const tableRef = useRef<HTMLTableElement | null>(null);
+  useEffect(() => {
+    applyStoredColumnWidths(tableRef.current);
+  }, []);
+
   const ignoreFieldsForCounting: (keyof IIssueDisplayProperties)[] = ["key"];
   if (!isEstimateEnabled) ignoreFieldsForCounting.push("estimate");
   const displayPropertiesCount = getDisplayPropertiesCount(displayProperties, ignoreFieldsForCounting);
 
   return (
-    <table className="w-full overflow-y-auto bg-surface-1" onKeyDown={handleKeyBoardNavigation}>
+    <table ref={tableRef} className="w-full overflow-y-auto bg-surface-1" onKeyDown={handleKeyBoardNavigation}>
       <SpreadsheetHeader
         displayProperties={displayProperties}
         displayFilters={displayFilters}
@@ -144,8 +151,8 @@ export const SpreadsheetTable = observer(function SpreadsheetTable(props: Props)
       </tbody>
       {canLoadMoreIssues && (
         <tfoot ref={setIntersectionElement}>
-          {Array.from({ length: 3 }).map((_, index) => (
-            <SpreadsheetIssueRowLoader key={index} columnCount={displayPropertiesCount} />
+          {["loader-1", "loader-2", "loader-3"].map((loaderKey) => (
+            <SpreadsheetIssueRowLoader key={loaderKey} columnCount={displayPropertiesCount} />
           ))}
         </tfoot>
       )}

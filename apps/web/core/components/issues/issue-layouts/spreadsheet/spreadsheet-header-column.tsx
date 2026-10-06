@@ -11,6 +11,7 @@ import type { IIssueDisplayFilterOptions, IIssueDisplayProperties } from "@plane
 //components
 import { shouldRenderColumn } from "@/helpers/issue-filter.helper";
 import { WithDisplayPropertiesHOC } from "../properties/with-display-properties-HOC";
+import { ColumnResizeHandle, getColumnWidthStyle } from "./column-resize";
 import { HeaderColumn } from "./columns/header-column";
 
 interface Props {
@@ -36,7 +37,8 @@ export const SpreadsheetHeaderColumn = observer(function SpreadsheetHeaderColumn
       shouldRenderProperty={() => shouldRenderProperty}
     >
       <th
-        className="h-11 min-w-36 items-center border border-t-0 border-b-0 border-subtle bg-layer-1 py-1 text-13 font-medium"
+        className="relative h-11 items-center border border-t-0 border-b-0 border-subtle bg-layer-1 py-1 text-13 font-medium"
+        style={getColumnWidthStyle(property, "9rem")}
         ref={tableHeaderCellRef}
         tabIndex={0}
       >
@@ -49,6 +51,7 @@ export const SpreadsheetHeaderColumn = observer(function SpreadsheetHeaderColumn
           }}
           isEpic={isEpic}
         />
+        <ColumnResizeHandle columnKey={property} />
       </th>
     </WithDisplayPropertiesHOC>
   );

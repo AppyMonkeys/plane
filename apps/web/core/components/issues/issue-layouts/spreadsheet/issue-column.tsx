@@ -13,6 +13,7 @@ import { SPREADSHEET_COLUMNS } from "../utils";
 // components
 import { shouldRenderColumn } from "@/helpers/issue-filter.helper";
 import { WithDisplayPropertiesHOC } from "../properties/with-display-properties-HOC";
+import { getColumnWidthStyle } from "./column-resize";
 
 type Props = {
   displayProperties: IIssueDisplayProperties;
@@ -46,7 +47,8 @@ export const IssueColumn = observer(function IssueColumn(props: Props) {
     >
       <td
         tabIndex={0}
-        className="h-11 min-w-36 border-r-[1px] border-subtle text-13 after:absolute after:bottom-[-1px] after:w-full after:border after:border-subtle"
+        className="h-11 overflow-hidden border-r-[1px] border-subtle text-13 after:absolute after:bottom-[-1px] after:w-full after:border after:border-subtle"
+        style={getColumnWidthStyle(property, "9rem")}
         ref={tableCellRef}
       >
         <Column

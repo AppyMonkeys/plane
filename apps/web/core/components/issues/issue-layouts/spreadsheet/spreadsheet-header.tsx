@@ -15,6 +15,7 @@ import { cn } from "@plane/utils";
 import { MultipleSelectGroupAction } from "@/components/core/multiple-select";
 // hooks
 import type { TSelectionHelper } from "@/hooks/use-multiple-select";
+import { ColumnResizeHandle, NAME_COLUMN_KEY, getColumnWidthStyle } from "./column-resize";
 import { SpreadsheetHeaderColumn } from "./spreadsheet-header-column";
 
 interface Props {
@@ -51,7 +52,8 @@ export const SpreadsheetHeader = observer(function SpreadsheetHeader(props: Prop
       <tr>
         {/* Single header column containing both identifier and workitem */}
         <th
-          className="group/list-header left-0 z-[15] h-11 min-w-60 border-r-[0.5px] border-subtle bg-layer-1 text-13 font-medium md:sticky"
+          className="group/list-header relative left-0 z-[15] h-11 border-r-[0.5px] border-subtle bg-layer-1 text-13 font-medium md:sticky"
+          style={getColumnWidthStyle(NAME_COLUMN_KEY, "15rem")}
           tabIndex={-1}
         >
           <div className="flex h-full w-full items-center gap-2 px-page-x">
@@ -74,6 +76,7 @@ export const SpreadsheetHeader = observer(function SpreadsheetHeader(props: Prop
               <span className="text-13 font-medium">{`${isEpic ? "Epics" : "Work items"}`}</span>
             </div>
           </div>
+          <ColumnResizeHandle columnKey={NAME_COLUMN_KEY} />
         </th>
 
         {spreadsheetColumnsList.map((property) => (
