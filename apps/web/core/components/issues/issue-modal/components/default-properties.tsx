@@ -24,6 +24,7 @@ import { MemberDropdown } from "@/components/dropdowns/member/dropdown";
 import { ModuleDropdown } from "@/components/dropdowns/module/dropdown";
 import { PriorityDropdown } from "@/components/dropdowns/priority";
 import { StateDropdown } from "@/components/dropdowns/state/dropdown";
+import { ParentDropdown } from "@/components/issues/parent-dropdown";
 import { ParentIssuesListModal } from "@/components/issues/parent-issues-list-modal";
 import { IssueLabelSelect } from "@/components/issues/select";
 import { IssueIdentifier } from "@/components/issues/issue-detail/issue-identifier";
@@ -330,16 +331,31 @@ export const IssueDefaultProperties = observer(function IssueDefaultProperties(p
               />
             </>
           </CustomMenu>
-        ) : (
-          <button
-            type="button"
-            className="flex h-full cursor-pointer items-center justify-between gap-1 rounded-sm border-[0.5px] border-strong px-2 py-0.5 text-caption-sm-regular hover:bg-layer-1"
-            onClick={() => setParentIssueListModalOpen(true)}
-          >
-            <ParentOutline className="h-3 w-3 flex-shrink-0" />
-            <span className="whitespace-nowrap">{t("add_parent")}</span>
-          </button>
-        )}
+        ) : projectId ? (
+          <Controller
+            control={control}
+            name="parent_id"
+            render={({ field: { onChange } }) => (
+              <ParentDropdown
+                workspaceSlug={workspaceSlug}
+                projectId={projectId}
+                issueId={isDraft ? undefined : id}
+                onChange={(issue) => {
+                  onChange(issue.id);
+                  handleFormChange();
+                  setSelectedParentIssue(issue);
+                }}
+                buttonClassName="flex h-full cursor-pointer items-center justify-between gap-1 rounded-sm border-[0.5px] border-strong px-2 py-0.5 text-caption-sm-regular hover:bg-layer-1"
+                button={
+                  <>
+                    <ParentOutline className="h-3 w-3 flex-shrink-0" />
+                    <span className="whitespace-nowrap">{t("add_parent")}</span>
+                  </>
+                }
+              />
+            )}
+          />
+        ) : null}
       </div>
       <Controller
         control={control}

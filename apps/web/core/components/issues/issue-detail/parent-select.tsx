@@ -20,6 +20,7 @@ import { usePlatformOS } from "@/hooks/use-platform-os";
 // components
 import { IssueIdentifier } from "@/components/issues/issue-detail/issue-identifier";
 // local imports
+import { ParentDropdown } from "../parent-dropdown";
 import { ParentIssuesListModal } from "../parent-issues-list-modal";
 
 type TIssueParentSelect = {
@@ -73,66 +74,77 @@ export const IssueParentSelect = observer(function IssueParentSelect(props: TIss
         issueId={issueId}
         isOpen={isParentIssueModalOpen === issueId}
         handleClose={() => toggleParentIssueModal(null)}
-        onChange={(issue: any) => handleParentIssue(issue?.id)}
+        onChange={(selected) => void handleParentIssue(selected?.id)}
       />
-      <button
-        type="button"
-        className={cn(
+      {/* type-to-search dropdown, like assignees and labels; the modal above stays for other entry points */}
+      <ParentDropdown
+        workspaceSlug={workspaceSlug}
+        projectId={projectId}
+        issueId={issueId}
+        onChange={(selected) => void handleParentIssue(selected.id)}
+        disabled={disabled}
+        buttonClassName={cn(
           "group flex items-center justify-between gap-2 rounded-sm px-2 py-0.5 outline-none",
           {
             "cursor-not-allowed": disabled,
             "hover:bg-layer-transparent-hover": !disabled,
-            "bg-layer-transparent-selected": isParentIssueModalOpen,
           },
           className
         )}
-        onClick={() => toggleParentIssueModal(issue.id)}
-        disabled={disabled}
-      >
-        {issue.parent_id && parentIssue ? (
-          <div className="flex items-center gap-1.5">
-            <Tooltip label={`Title: ${parentIssue.name}`} layout="stacked" disabled={isMobile}>
-              <Link href={workItemLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                {parentIssue?.project_id && parentIssueProjectDetails && (
-                  <IssueIdentifier
-                    projectId={parentIssue.project_id}
-                    issueTypeId={parentIssue.type_id}
-                    projectIdentifier={parentIssueProjectDetails?.identifier}
-                    issueSequenceId={parentIssue.sequence_id}
-                    size="xs"
-                    variant="secondary"
-                  />
-                )}
-              </Link>
-            </Tooltip>
+        button={
+          <>
+            {issue.parent_id && parentIssue ? (
+              <div className="flex items-center gap-1.5">
+                <Tooltip label={`Title: ${parentIssue.name}`} layout="stacked" disabled={isMobile}>
+                  <Link
+                    href={workItemLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {parentIssue?.project_id && parentIssueProjectDetails && (
+                      <IssueIdentifier
+                        projectId={parentIssue.project_id}
+                        issueTypeId={parentIssue.type_id}
+                        projectIdentifier={parentIssueProjectDetails?.identifier}
+                        issueSequenceId={parentIssue.sequence_id}
+                        size="xs"
+                        variant="secondary"
+                      />
+                    )}
+                  </Link>
+                </Tooltip>
 
-            {!disabled && (
-              <Tooltip label={t("common.remove")} side="bottom" disabled={isMobile}>
-                <span
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleRemoveSubIssue(workspaceSlug, projectId, parentIssue.id, issueId);
-                  }}
-                >
-                  <CloseOutline className="h-2.5 w-2.5 text-tertiary hover:text-danger-primary" />
-                </span>
-              </Tooltip>
+                {!disabled && (
+                  <Tooltip label={t("common.remove")} side="bottom" disabled={isMobile}>
+                    {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- sits inside the dropdown's button, so it can't be a button itself */}
+                    <span
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleRemoveSubIssue(workspaceSlug, projectId, parentIssue.id, issueId);
+                      }}
+                    >
+                      <CloseOutline className="h-2.5 w-2.5 text-tertiary hover:text-danger-primary" />
+                    </span>
+                  </Tooltip>
+                )}
+              </div>
+            ) : (
+              <span className="text-body-xs-medium text-placeholder">{t("issue.add.parent")}</span>
             )}
-          </div>
-        ) : (
-          <span className="text-body-xs-medium text-placeholder">{t("issue.add.parent")}</span>
-        )}
-        {!disabled && (
-          <span
-            className={cn("flex-shrink-0 p-1 opacity-0 group-hover:opacity-100", {
-              "text-placeholder": !issue.parent_id && !parentIssue,
-            })}
-          >
-            <EditOutline className="h-2.5 w-2.5 flex-shrink-0" />
-          </span>
-        )}
-      </button>
+            {!disabled && (
+              <span
+                className={cn("flex-shrink-0 p-1 opacity-0 group-hover:opacity-100", {
+                  "text-placeholder": !issue.parent_id && !parentIssue,
+                })}
+              >
+                <EditOutline className="h-2.5 w-2.5 flex-shrink-0" />
+              </span>
+            )}
+          </>
+        }
+      />
     </>
   );
 });
