@@ -8,7 +8,7 @@ import { useState } from "react";
 import { observer } from "mobx-react";
 
 import { useTranslation } from "@plane/i18n";
-import { DeleteOutline } from "@makeplane/propel/icons";
+import { DeleteOutline, DownloadOutline } from "@makeplane/propel/icons";
 import { Tooltip } from "@makeplane/propel/components/tooltip";
 import type { TIssueServiceType } from "@plane/types";
 import { EIssueServiceType } from "@plane/types";
@@ -55,6 +55,18 @@ export const IssueAttachmentsListItem = observer(function IssueAttachmentsListIt
   const { isMobile } = usePlatformOS();
   // states
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // The attachment URL answers with a "save as" (Content-Disposition: attachment) redirect, so
+  // following it through a link downloads the file without leaving the page.
+  const handleDownload = () => {
+    if (!fileURL) return;
+    const link = document.createElement("a");
+    link.href = fileURL;
+    link.download = `${fileName}.${fileExtension}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
 
   if (!attachment) return <></>;
 
@@ -105,17 +117,26 @@ export const IssueAttachmentsListItem = observer(function IssueAttachmentsListIt
               </>
             )}
 
-            <CustomMenu ellipsis closeOnSelect placement="bottom-end" disabled={disabled}>
-              <CustomMenu.MenuItem
-                onClick={() => {
-                  toggleDeleteAttachmentModal(attachmentId);
-                }}
-              >
+            {/* downloading is open to anyone who can see the attachment; only deleting needs edit rights */}
+            <CustomMenu ellipsis closeOnSelect placement="bottom-end">
+              <CustomMenu.MenuItem onClick={handleDownload}>
                 <div className="flex items-center gap-2">
-                  <DeleteOutline className="h-3.5 w-3.5" />
-                  <span>{t("common.actions.delete")}</span>
+                  <DownloadOutline className="h-3.5 w-3.5" />
+                  <span>{t("common.download")}</span>
                 </div>
               </CustomMenu.MenuItem>
+              {!disabled && (
+                <CustomMenu.MenuItem
+                  onClick={() => {
+                    toggleDeleteAttachmentModal(attachmentId);
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <DeleteOutline className="h-3.5 w-3.5" />
+                    <span>{t("common.actions.delete")}</span>
+                  </div>
+                </CustomMenu.MenuItem>
+              )}
             </CustomMenu>
           </div>
         </div>
