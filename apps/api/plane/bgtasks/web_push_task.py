@@ -32,24 +32,20 @@ def send_web_push_notifications(notification_ids):
     # Local import to avoid a circular import with bgtasks.notification_task
     from plane.db.models import Notification
 
-    notifications = Notification.objects.filter(pk__in=notification_ids).select_related(
-        "workspace", "project"
-    )
+    notifications = Notification.objects.filter(pk__in=notification_ids).select_related("workspace", "project")
     if not notifications:
         return
 
     receiver_ids = {str(notification.receiver_id) for notification in notifications}
     enabled_receiver_ids = set(
-        UserNotificationPreference.objects.filter(
-            user_id__in=receiver_ids, browser_push=True
-        ).values_list("user_id", flat=True)
+        UserNotificationPreference.objects.filter(user_id__in=receiver_ids, browser_push=True).values_list(
+            "user_id", flat=True
+        )
     )
     enabled_receiver_ids = {str(user_id) for user_id in enabled_receiver_ids}
 
     subscriptions_by_user = {}
-    for subscription in WebPushSubscription.objects.filter(
-        user_id__in=enabled_receiver_ids, is_active=True
-    ):
+    for subscription in WebPushSubscription.objects.filter(user_id__in=enabled_receiver_ids, is_active=True):
         subscriptions_by_user.setdefault(str(subscription.user_id), []).append(subscription)
 
     for notification in notifications:
@@ -60,21 +56,47 @@ def send_web_push_notifications(notification_ids):
         if not subscriptions:
             continue
 
-        url = "/"
-        if notification.workspace and notification.entity_identifier:
-            url = f"/{notification.workspace.slug}/browse/{notification.entity_identifier}/"
-
-        payload = json.dumps(
-            {
-                "title": notification.title or "Plane",
-                "body": notification.message_stripped or "",
-                "url": url,
-                "notification_id": str(notification.id),
-            }
-        )
+        payload = json.dumps(build_push_payload(notification))
 
         for subscription in subscriptions:
             _send_to_subscription(subscription, payload)
+
+
+def build_push_payload(notification):
+    """What the browser shows for a notification: title, body and the page a click opens."""
+    data = notification.data if isinstance(notification.data, dict) else {}
+    issue = data.get("issue") or {}
+    activity = data.get("issue_activity") or {}
+
+    # "LOKKO-123" when the notification is about a work item we know the key of
+    work_item_key = (
+        f"{issue['identifier']}-{issue['sequence_id']}"
+        if issue.get("identifier") and issue.get("sequence_id") is not None
+        else None
+    )
+
+    url = "/"
+    if notification.workspace and (work_item_key or notification.entity_identifier):
+        url = f"/{notification.workspace.slug}/browse/{work_item_key or notification.entity_identifier}/"
+
+    title = notification.title or "Plane"
+    body = notification.message_stripped or ""
+
+    # Being assigned a work item: lead with which one it is -- its number and title -- rather than
+    # the activity wording ("added assignee ...").
+    was_assigned_to_receiver = activity.get("field") == "assignees" and str(
+        activity.get("new_identifier") or ""
+    ) == str(notification.receiver_id)
+    if was_assigned_to_receiver and work_item_key:
+        title = work_item_key
+        body = issue.get("name") or ""
+
+    return {
+        "title": title,
+        "body": body,
+        "url": url,
+        "notification_id": str(notification.id),
+    }
 
 
 def _send_to_subscription(subscription, payload):
