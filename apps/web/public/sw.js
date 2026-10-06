@@ -60,15 +60,58 @@ self.addEventListener("push", (event) => {
   const { title, body, url, notification_id: notificationId } = payload;
 
   event.waitUntil(
-    self.registration.showNotification(title || "Plane", {
-      body: body || "",
-      icon: "/favicon/android-chrome-192x192.png",
-      badge: "/favicon/android-chrome-192x192.png",
-      tag: notificationId,
-      data: { url: url || "/" },
-    })
+    // If an open Plane window takes care of the sound (plays its chime, or is muted in settings),
+    // show the popup silently; otherwise let the operating system play its own notification sound.
+    askOpenWindowToHandleSound().then((handledByWindow) =>
+      self.registration.showNotification(title || "Plane", {
+        body: body || "",
+        icon: "/favicon/android-chrome-192x192.png",
+        badge: "/favicon/android-chrome-192x192.png",
+        tag: notificationId,
+        silent: handledByWindow,
+        data: { url: url || "/" },
+      })
+    )
   );
 });
+
+// Keep in sync with NOTIFICATION_SOUND_MESSAGE in helpers/notification-sound.helper.ts
+const NOTIFICATION_SOUND_MESSAGE = "PLANE_NOTIFICATION_SOUND";
+const SOUND_REPLY_TIMEOUT_MS = 400;
+const MAX_WINDOWS_TO_ASK = 3;
+
+function askWindowToHandleSound(client) {
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    const timer = setTimeout(() => resolve(false), SOUND_REPLY_TIMEOUT_MS);
+    channel.port1.onmessage = (message) => {
+      clearTimeout(timer);
+      resolve(message.data?.handled === true);
+    };
+    try {
+      client.postMessage({ type: NOTIFICATION_SOUND_MESSAGE }, [channel.port2]);
+    } catch (_error) {
+      clearTimeout(timer);
+      resolve(false);
+    }
+  });
+}
+
+// Asks one window at a time (focused first, then visible ones) so only a single chime plays even
+// with several tabs open. Resolves false when no window is open or none of them can play audio.
+async function askOpenWindowToHandleSound() {
+  try {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const rank = (client) => (client.focused ? 2 : client.visibilityState === "visible" ? 1 : 0);
+    const ordered = [...windows].sort((a, b) => rank(b) - rank(a)).slice(0, MAX_WINDOWS_TO_ASK);
+    for (const client of ordered) {
+      if (await askWindowToHandleSound(client)) return true;
+    }
+  } catch (_error) {
+    // fall through: let the operating system make the sound
+  }
+  return false;
+}
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();

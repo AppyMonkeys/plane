@@ -5,6 +5,13 @@
  */
 
 import { useEffect } from "react";
+// helpers
+import {
+  NOTIFICATION_SOUND_MESSAGE,
+  isNotificationSoundEnabled,
+  playNotificationChime,
+  unlockNotificationSound,
+} from "@/helpers/notification-sound.helper";
 
 // Registers the app's service worker unconditionally (regardless of whether
 // the user has opted into browser push notifications) so the browser treats
@@ -18,6 +25,31 @@ export function ServiceWorkerWrapper() {
     navigator.serviceWorker.register("/sw.js").catch((error) => {
       console.error("Service worker registration failed", error);
     });
+  }, []);
+
+  // Notification sound: when a push notification arrives the service worker asks an open window
+  // to play the chime, and uses the reply to decide whether the OS popup should stay quiet.
+  useEffect(() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      if ((event.data as { type?: string } | null)?.type !== NOTIFICATION_SOUND_MESSAGE) return;
+      // muted here -> we have "handled" it by staying quiet; otherwise handled only if audio could play
+      const handled = isNotificationSoundEnabled() ? playNotificationChime() : true;
+      event.ports[0]?.postMessage({ handled });
+    };
+    navigator.serviceWorker.addEventListener("message", handleMessage);
+
+    // browsers only allow sound after the user has interacted with the page
+    const unlock = () => unlockNotificationSound();
+    window.addEventListener("pointerdown", unlock, { passive: true });
+    window.addEventListener("keydown", unlock, { passive: true });
+
+    return () => {
+      navigator.serviceWorker.removeEventListener("message", handleMessage);
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
   }, []);
 
   return null;

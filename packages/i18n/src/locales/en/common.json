@@ -126,6 +126,8 @@
   "browser_push_prompt_enable": "Enable",
   "browser_push_prompt_later": "Not now",
   "browser_push_prompt_enabled": "Desktop notifications are on for this browser.",
+  "notification_sound": "Notification sound",
+  "notification_sound_description": "Play a short chime when a desktop notification arrives while Plane is open in this browser. When Plane is closed, your operating system's own notification sound is used.",
   "old_password": "Old password",
   "general_settings": "General settings",
   "sign_out": "Sign out",

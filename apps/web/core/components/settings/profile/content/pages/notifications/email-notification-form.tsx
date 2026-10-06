@@ -21,6 +21,12 @@ import {
   isBrowserPushActiveHere,
   isBrowserPushSupported,
 } from "@/helpers/browser-push-notification.helper";
+import {
+  isNotificationSoundEnabled,
+  playNotificationChime,
+  setNotificationSoundEnabled,
+  unlockNotificationSound,
+} from "@/helpers/notification-sound.helper";
 // services
 import { UserService } from "@/services/user.service";
 
@@ -39,6 +45,8 @@ export const NotificationsProfileSettingsForm = observer(function NotificationsP
   // is per user and defaults to on, so it can't tell whether this device will
   // receive anything
   const [isPushActiveHere, setIsPushActiveHere] = useState(false);
+  // chime played by Plane while it is open; a per-browser choice (see notification-sound.helper)
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   // form data
   const { control, reset } = useForm<IUserEmailNotificationSettings>({
     defaultValues: {
@@ -105,6 +113,10 @@ export const NotificationsProfileSettingsForm = observer(function NotificationsP
     void isBrowserPushActiveHere().then(setIsPushActiveHere);
   }, []);
 
+  useEffect(() => {
+    setIsSoundEnabled(isNotificationSoundEnabled());
+  }, []);
+
   return (
     <div className="flex flex-col gap-y-1">
       {isBrowserPushSupported() && (
@@ -125,6 +137,28 @@ export const NotificationsProfileSettingsForm = observer(function NotificationsP
                   aria-label={t("browser_notifications")}
                 />
               )}
+            />
+          }
+        />
+      )}
+      {isBrowserPushSupported() && (
+        <SettingsControlItem
+          title={t("notification_sound")}
+          description={t("notification_sound_description")}
+          control={
+            <Switch
+              size="sm"
+              checked={isSoundEnabled}
+              onCheckedChange={(newValue) => {
+                setNotificationSoundEnabled(newValue);
+                setIsSoundEnabled(newValue);
+                // doubles as a preview, and this click is the gesture that lets the browser play audio
+                if (newValue) {
+                  unlockNotificationSound();
+                  playNotificationChime();
+                }
+              }}
+              aria-label={t("notification_sound")}
             />
           }
         />
