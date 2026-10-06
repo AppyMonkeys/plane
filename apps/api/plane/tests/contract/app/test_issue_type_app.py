@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+import json
+
 import pytest
 from django.core.management import call_command
 from rest_framework import status
@@ -147,6 +149,23 @@ class TestIssueTypeAppContract:
         # and the list endpoint hands the type back to the app
         listed = session_client.get(issues_url(workspace, typed_project))
         assert str(listed.data["results"][0]["type_id"]) == str(bug.id)
+
+    @pytest.mark.django_db
+    def test_work_items_can_be_filtered_by_type(self, session_client, workspace, typed_project):
+        bug = project_issue_types(typed_project.id).get(name="Bug")
+        story = project_issue_types(typed_project.id).get(name="Story")
+        Issue.objects.create(name="Crash", project=typed_project, workspace=workspace, type=bug)
+        Issue.objects.create(name="Login", project=typed_project, workspace=workspace, type=story)
+        Issue.objects.create(name="Untyped", project=typed_project, workspace=workspace)
+
+        def names(filters):
+            response = session_client.get(issues_url(workspace, typed_project), {"filters": json.dumps(filters)})
+            assert response.status_code == status.HTTP_200_OK
+            return sorted(issue["name"] for issue in response.data["results"])
+
+        assert names({"and": [{"type_id__in": f"{bug.id},{story.id}"}]}) == ["Crash", "Login"]
+        assert names({"and": [{"type_id": str(bug.id)}]}) == ["Crash"]
+        assert names({"and": [{"not": {"type_id__in": str(bug.id)}}]}) == ["Login", "Untyped"]
 
     @pytest.mark.django_db
     def test_type_from_another_project_is_rejected(self, session_client, workspace, typed_project, create_user):
