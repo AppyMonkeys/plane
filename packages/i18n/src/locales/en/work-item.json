@@ -269,7 +269,18 @@
       "click_to_view_upvotes": "Click to view upvotes",
       "click_to_view_downvotes": "Click to view downvotes"
     },
-    "refresh_error": "Work items could not be refreshed. Please try again."
+    "refresh_error": "Work items could not be refreshed. Please try again.",
+    "attachments": {
+      "attach": "Attach",
+      "hint": "or drop files here: images, videos, anything",
+      "max_size": "max {size} MB",
+      "too_large_title": "File too large",
+      "remove": "Remove {name}",
+      "not_saved_with_draft_title": "Attachments not saved",
+      "not_saved_with_draft": "Drafts can't hold attachments. Add the files again when you create the work item.",
+      "upload_failed_title": "Some attachments failed to upload",
+      "upload_failed": "The work item was created, but these could not be attached: {files}"
+    }
   },
   "sub_work_item": {
     "update": {

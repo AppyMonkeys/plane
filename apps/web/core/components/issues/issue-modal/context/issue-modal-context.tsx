@@ -64,6 +64,9 @@ export type TIssueModalContext = {
   setIsApplyingTemplate: React.Dispatch<React.SetStateAction<boolean>>;
   selectedParentIssue: ISearchIssueResponse | null;
   setSelectedParentIssue: React.Dispatch<React.SetStateAction<ISearchIssueResponse | null>>;
+  // files picked in the create dialog, uploaded as attachments once the work item exists
+  pendingAttachments: File[];
+  setPendingAttachments: React.Dispatch<React.SetStateAction<File[]>>;
   issuePropertyValues: TIssuePropertyValues;
   setIssuePropertyValues: React.Dispatch<React.SetStateAction<TIssuePropertyValues>>;
   issuePropertyValueErrors: TIssuePropertyValueErrors;

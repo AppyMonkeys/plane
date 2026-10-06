@@ -74,8 +74,17 @@ export const CreateUpdateIssueModalBase = observer(function CreateUpdateIssueMod
   const { issues } = useIssues(storeType);
   const { issues: projectIssues } = useIssues(EIssuesStoreType.PROJECT);
   const { issues: draftIssues } = useIssues(EIssuesStoreType.WORKSPACE_DRAFT);
-  const { fetchIssue } = useIssueDetail();
-  const { allowedProjectIds, handleCreateUpdatePropertyValues, handleCreateSubWorkItem } = useIssueModal();
+  const {
+    fetchIssue,
+    attachment: { createAttachment },
+  } = useIssueDetail();
+  const {
+    allowedProjectIds,
+    handleCreateUpdatePropertyValues,
+    handleCreateSubWorkItem,
+    pendingAttachments,
+    setPendingAttachments,
+  } = useIssueModal();
   const { getProjectByIdentifier } = useProject();
   // current store details
   const { createIssue, updateIssue } = useIssuesActions(storeType);
@@ -105,6 +114,7 @@ export const CreateUpdateIssueModalBase = observer(function CreateUpdateIssueMod
     // and return to avoid activeProjectId being set to some other project
     if (!isOpen) {
       setActiveProjectId(null);
+      setPendingAttachments([]);
       return;
     }
 
@@ -124,11 +134,11 @@ export const CreateUpdateIssueModalBase = observer(function CreateUpdateIssueMod
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.project_id, data?.id, data?.sourceIssueId, projectId, isOpen, activeProjectId]);
 
-  const addIssueToCycle = async (issue: TIssue, cycleId: string) => {
+  const addIssueToCycle = async (issue: TIssue, targetCycleId: string) => {
     if (!workspaceSlug || !issue.project_id) return;
 
-    await issues.addIssueToCycle(workspaceSlug.toString(), issue.project_id, cycleId, [issue.id]);
-    fetchCycleDetails(workspaceSlug.toString(), issue.project_id, cycleId);
+    await issues.addIssueToCycle(workspaceSlug.toString(), issue.project_id, targetCycleId, [issue.id]);
+    fetchCycleDetails(workspaceSlug.toString(), issue.project_id, targetCycleId);
   };
 
   const addIssueToModule = async (issue: TIssue, moduleIds: string[]) => {
@@ -136,9 +146,7 @@ export const CreateUpdateIssueModalBase = observer(function CreateUpdateIssueMod
 
     await Promise.all([
       issues.changeModulesInIssue(workspaceSlug.toString(), issue.project_id, issue.id, moduleIds, []),
-      ...moduleIds.map(
-        (moduleId) => issue.project_id && fetchModuleDetails(workspaceSlug.toString(), issue.project_id, moduleId)
-      ),
+      ...moduleIds.map((id) => issue.project_id && fetchModuleDetails(workspaceSlug.toString(), issue.project_id, id)),
     ]);
   };
 
@@ -233,6 +241,31 @@ export const CreateUpdateIssueModalBase = observer(function CreateUpdateIssueMod
         });
       }
 
+      // upload the files picked in the dialog, now that there is a work item to attach them to
+      if (pendingAttachments.length > 0) {
+        if (is_draft_issue) {
+          setToast({
+            type: TOAST_TYPE.WARNING,
+            title: t("issue.attachments.not_saved_with_draft_title"),
+            message: t("issue.attachments.not_saved_with_draft"),
+          });
+        } else if (response.id && response.project_id) {
+          const uploads = await Promise.allSettled(
+            pendingAttachments.map((file) =>
+              createAttachment(workspaceSlug.toString(), response.project_id as string, response.id, file)
+            )
+          );
+          const failedFiles = pendingAttachments.filter((_, index) => uploads[index].status === "rejected");
+          if (failedFiles.length > 0)
+            setToast({
+              type: TOAST_TYPE.ERROR,
+              title: t("issue.attachments.upload_failed_title"),
+              message: t("issue.attachments.upload_failed", { files: failedFiles.map((file) => file.name).join(", ") }),
+            });
+        }
+        setPendingAttachments([]);
+      }
+
       setToast({
         type: TOAST_TYPE.SUCCESS,
         title: t("success"),
@@ -260,6 +293,7 @@ export const CreateUpdateIssueModalBase = observer(function CreateUpdateIssueMod
     }
   };
 
+  // oxlint-disable-next-line no-shadow -- the work item being saved, not the modal's `data` prop
   const handleCycleChange = async (data: Partial<TIssue> | undefined, payload: Partial<TIssue>) => {
     if (!workspaceSlug || !data?.project_id || !data?.id) return;
     // return if user is not trying to change the cycle, i.e
@@ -285,6 +319,7 @@ export const CreateUpdateIssueModalBase = observer(function CreateUpdateIssueMod
     }
   };
 
+  // oxlint-disable-next-line no-shadow -- the work item being saved, not the modal's `data` prop
   const handleModuleChange = async (data: Partial<TIssue>, payload: Partial<TIssue>) => {
     if (!workspaceSlug || !data?.project_id || !data?.id) return;
     // return if user is not trying to change the module, i.e
@@ -302,11 +337,11 @@ export const CreateUpdateIssueModalBase = observer(function CreateUpdateIssueMod
     const modulesToAdd: string[] = [];
     const modulesToRemove: string[] = [];
 
-    for (const moduleId of updatedModuleIds) {
-      if (data.module_ids?.includes(moduleId)) {
-        modulesToRemove.push(moduleId);
+    for (const id of updatedModuleIds) {
+      if (data.module_ids?.includes(id)) {
+        modulesToRemove.push(id);
       } else {
-        modulesToAdd.push(moduleId);
+        modulesToAdd.push(id);
       }
     }
     // update modules if there are modules to add or remove

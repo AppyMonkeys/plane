@@ -25,6 +25,7 @@ export const IssueModalProvider = observer(function IssueModalProvider(props: TI
   const { children, allowedProjectIds } = props;
   // states
   const [selectedParentIssue, setSelectedParentIssue] = useState<ISearchIssueResponse | null>(null);
+  const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
   // store hooks
   const { projectsWithCreatePermissions } = useUser();
   const { isWorkItemTypeEnabledForProject, getProjectDefaultWorkItemType } = useWorkItemType();
@@ -42,6 +43,8 @@ export const IssueModalProvider = observer(function IssueModalProvider(props: TI
         setIsApplyingTemplate: () => {},
         selectedParentIssue,
         setSelectedParentIssue,
+        pendingAttachments,
+        setPendingAttachments,
         issuePropertyValues: {},
         setIssuePropertyValues: () => {},
         issuePropertyValueErrors: {},

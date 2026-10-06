@@ -32,10 +32,12 @@ import {
 import {
   IssueDefaultProperties,
   IssueDescriptionEditor,
+  IssueModalAttachments,
   IssueParentTag,
   IssueProjectSelect,
   IssueTitleInput,
 } from "@/components/issues/issue-modal/components";
+import { useAddPendingAttachments } from "@/components/issues/issue-modal/components/attachments";
 // helpers
 // hooks
 import { useIssueModal } from "@/hooks/context/use-issue-modal";
@@ -124,6 +126,14 @@ export const IssueFormRoot = observer(function IssueFormRoot(props: IssueFormPro
   } = useIssueModal();
   const { isMobile } = usePlatformOS();
   const { moveIssue } = useWorkspaceDraftIssues();
+  // attachments can be queued only while creating; an existing work item has its own attachments section
+  const canAttachFiles = !data?.id;
+  const addPendingAttachments = useAddPendingAttachments();
+  const handleFilesFromEvent = (event: React.SyntheticEvent, fileList: FileList) => {
+    if (!canAttachFiles || event.defaultPrevented || fileList.length === 0) return;
+    event.preventDefault();
+    addPendingAttachments(Array.from(fileList));
+  };
 
   const {
     issue: { getIssueById },
@@ -358,6 +368,13 @@ export const IssueFormRoot = observer(function IssueFormRoot(props: IssueFormPro
             ref={formRef}
             onSubmit={handleSubmit((data) => handleFormSubmit(data))}
             className="flex w-full flex-col"
+            // Files dropped or pasted anywhere on the create dialog become attachments, unless
+            // something inside already took them (the description editor embeds images itself).
+            onDragOver={(event) => {
+              if (canAttachFiles && event.dataTransfer.types.includes("Files")) event.preventDefault();
+            }}
+            onDrop={(event) => handleFilesFromEvent(event, event.dataTransfer.files)}
+            onPaste={(event) => handleFilesFromEvent(event, event.clipboardData.files)}
           >
             <div className="rounded-t-lg bg-surface-1 p-5">
               <h3 className="pb-2 text-h4-medium text-secondary">{modalTitle}</h3>
@@ -417,6 +434,7 @@ export const IssueFormRoot = observer(function IssueFormRoot(props: IssueFormPro
                   onAssetUpload={onAssetUpload}
                   onClose={onClose}
                 />
+                {canAttachFiles && <IssueModalAttachments />}
               </div>
             </div>
             <div
