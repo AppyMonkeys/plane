@@ -39,6 +39,7 @@ from plane.db.models import (
     ProjectPage,
 )
 from plane.bgtasks.webhook_task import model_activity, webhook_activity
+from plane.utils.issue_types import enable_issue_types
 from plane.utils.exception_logger import log_exception
 from .base import BaseAPIView
 from plane.utils.host import base_host
@@ -269,6 +270,9 @@ class ProjectListCreateAPIEndpoint(BaseAPIView):
                             for state in DEFAULT_STATES
                         ]
                     )
+
+                    # Every project starts with work item types on and the default set of types
+                    enable_issue_types(serializer.instance)
 
                     project = self.get_queryset().filter(pk=serializer.instance.id).first()
 

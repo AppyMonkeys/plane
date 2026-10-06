@@ -19,7 +19,7 @@ from plane.db.models import (
     ProjectMember,
     State,
 )
-from plane.utils.issue_types import DEFAULT_ISSUE_TYPES, project_issue_types
+from plane.utils.issue_types import DEFAULT_ISSUE_TYPES, create_project_issue_type, project_issue_types
 
 
 @pytest.fixture(autouse=True)
@@ -185,6 +185,41 @@ class TestIssueTypeAppContract:
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(DEFAULT_ISSUE_TYPES)
+
+
+@pytest.mark.contract
+class TestWorkItemTypesOnByDefault:
+    @pytest.mark.django_db
+    def test_new_project_has_types_on_with_the_default_set(self, session_client, workspace):
+        response = session_client.post(
+            f"/api/workspaces/{workspace.slug}/projects/", {"name": "Fresh", "identifier": "FRESH"}, format="json"
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["is_issue_type_enabled"] is True
+        types = project_issue_types(response.data["id"])
+        assert [t.name for t in types] == [t["name"] for t in DEFAULT_ISSUE_TYPES]
+        assert [t.name for t in types if t.is_default] == ["Task"]
+
+    @pytest.mark.django_db
+    def test_enable_command_switches_every_project_on_and_fills_gaps(self, workspace, project, create_user):
+        # one project already has a hand-made set with its own default, the other has nothing
+        custom = Project.objects.create(name="Custom", identifier="CUS", workspace=workspace, created_by=create_user)
+        spike = create_project_issue_type(custom, name="Spike", is_default=True)
+        create_project_issue_type(custom, name="bug")
+        typed = Issue.objects.create(name="Keep me", project=custom, workspace=workspace, type=spike)
+
+        call_command("enable_issue_types")
+        call_command("enable_issue_types")  # running it again changes nothing
+
+        assert Project.objects.get(pk=project.id).is_issue_type_enabled is True
+        assert [t.name for t in project_issue_types(project.id)] == [t["name"] for t in DEFAULT_ISSUE_TYPES]
+        custom_types = [t.name for t in project_issue_types(custom.id)]
+        assert sorted(name.lower() for name in custom_types) == sorted(
+            ["spike"] + [t["name"].lower() for t in DEFAULT_ISSUE_TYPES]
+        )
+        assert [t.name for t in project_issue_types(custom.id) if t.is_default] == ["Spike"]
+        assert Issue.objects.get(pk=typed.id).type_id == spike.id
 
 
 @pytest.mark.contract

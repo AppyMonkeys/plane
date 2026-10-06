@@ -45,12 +45,20 @@ DEFAULT_ISSUE_TYPES = [
         "description": "A small piece of work that's part of a larger task.",
         "logo_props": type_logo("ListTree", "#4bade8"),
     },
+    {
+        "name": "Improvement",
+        "description": "An improvement or enhancement to an existing feature or task.",
+        "logo_props": type_logo("TrendingUp", "#63ba3c"),
+    },
+    {
+        "name": "New Feature",
+        "description": "A new feature of the product, which has yet to be developed.",
+        "logo_props": type_logo("Plus", "#63ba3c"),
+    },
 ]
 
 # Looks for other names that commonly come over from Jira.
 EXTRA_ISSUE_TYPE_LOGOS = {
-    "improvement": type_logo("TrendingUp", "#63ba3c"),
-    "new feature": type_logo("Plus", "#63ba3c"),
     "feature": type_logo("Plus", "#63ba3c"),
     "subtask": type_logo("ListTree", "#4bade8"),
 }
@@ -114,6 +122,33 @@ def seed_default_issue_types(project):
         create_project_issue_type(project, level=index, **issue_type)
         for index, issue_type in enumerate(DEFAULT_ISSUE_TYPES)
     ]
+
+
+def enable_issue_types(project):
+    """Switch work item types on for a project and make sure it has the whole default set.
+
+    Types the project already has (matched by name) are left as they are, so this is safe on a
+    project that was set up by hand or converted from labels; it only adds what is missing.
+    """
+    existing = {issue_type.name.lower(): issue_type for issue_type in project_issue_types(project.id)}
+    has_default = any(issue_type.is_default for issue_type in existing.values())
+    added = []
+    for issue_type in DEFAULT_ISSUE_TYPES:
+        if issue_type["name"].lower() in existing:
+            continue
+        fields = {**issue_type, "is_default": issue_type.get("is_default", False) and not has_default}
+        added.append(create_project_issue_type(project, **fields))
+
+    # the "Task" that was already there becomes the default when nothing else is
+    if not has_default and not any(issue_type.is_default for issue_type in added):
+        fallback = existing.get("task") or next(iter(existing.values()), None)
+        if fallback:
+            mark_default_issue_type(project.id, fallback.id)
+
+    if not project.is_issue_type_enabled:
+        type(project).objects.filter(pk=project.pk).update(is_issue_type_enabled=True)
+        project.is_issue_type_enabled = True
+    return added
 
 
 def mark_default_issue_type(project_id, issue_type_id):

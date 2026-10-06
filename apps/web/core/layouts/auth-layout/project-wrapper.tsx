@@ -37,6 +37,7 @@ import { useProjectState } from "@/hooks/store/use-project-state";
 import { useProjectView } from "@/hooks/store/use-project-view";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
 import { useTimeLineChart } from "@/hooks/use-timeline-chart";
+import { useWorkItemType } from "@/hooks/store/use-work-item-type";
 // helpers
 import { rememberLastVisitedProject } from "@/helpers/last-visited-project.helper";
 
@@ -49,6 +50,7 @@ interface IProjectAuthWrapper {
 
 export const ProjectAuthWrapper = observer(function ProjectAuthWrapper(props: IProjectAuthWrapper) {
   const { workspaceSlug, projectId, children, isLoading: isParentLoading = false } = props;
+  const { isWorkItemTypeEnabledForProject, fetchProjectWorkItemTypes } = useWorkItemType();
   // states
   const [isJoiningProject, setIsJoiningProject] = useState(false);
   // store hooks
@@ -100,6 +102,12 @@ export const ProjectAuthWrapper = observer(function ProjectAuthWrapper(props: IP
     { revalidateIfStale: false, revalidateOnFocus: false }
   );
   // fetching project labels
+  // fetching project work item types (a project created in this session isn't in the workspace-wide list yet)
+  useSWR(
+    isWorkItemTypeEnabledForProject(projectId) ? `PROJECT_WORK_ITEM_TYPES_${workspaceSlug}_${projectId}` : null,
+    () => fetchProjectWorkItemTypes(workspaceSlug, projectId),
+    { revalidateIfStale: false, revalidateOnFocus: false }
+  );
   useSWR(PROJECT_LABELS(projectId, currentProjectRole), () => fetchProjectLabels(workspaceSlug, projectId), {
     revalidateIfStale: false,
     revalidateOnFocus: false,

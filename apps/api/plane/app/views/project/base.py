@@ -40,7 +40,7 @@ from plane.db.models import (
     WorkspaceMember,
 )
 from plane.db.models.intake import IntakeIssueStatus
-from plane.utils.issue_types import seed_default_issue_types
+from plane.utils.issue_types import enable_issue_types, seed_default_issue_types
 from plane.utils.host import base_host
 from plane.utils.order_queryset import PROJECT_ORDER_BY_ALLOWLIST, sanitize_order_by
 
@@ -295,6 +295,9 @@ class ProjectViewSet(BaseViewSet):
                     for state in DEFAULT_STATES
                 ]
             )
+
+            # Every project starts with work item types on and the default set of types
+            enable_issue_types(serializer.instance)
 
             project = self.get_queryset().filter(pk=serializer.data["id"]).first()
 
