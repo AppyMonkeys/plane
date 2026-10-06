@@ -11,6 +11,7 @@ from django.db.models import Q
 from .project import ProjectBaseModel
 from plane.db.mixins import SoftDeletionManager
 
+
 class StateGroup(models.TextChoices):
     BACKLOG = "backlog", "Backlog"
     UNSTARTED = "unstarted", "Unstarted"
@@ -27,13 +28,14 @@ DEFAULT_STATES = [
         "color": "#60646C",
         "sequence": 15000,
         "group": StateGroup.BACKLOG.value,
-        "default": True,
     },
     {
         "name": "Todo",
         "color": "#60646C",
         "sequence": 25000,
         "group": StateGroup.UNSTARTED.value,
+        # the state new work items start in
+        "default": True,
     },
     {
         "name": "In Progress",
