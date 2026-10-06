@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+import { useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // icons
@@ -12,7 +13,9 @@ import { Circle } from "lucide-react";
 import { EUserPermissions, EUserPermissionsLevel, SPACE_BASE_PATH, SPACE_BASE_URL } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
-import { NewTabOutline, WorkItemsOutline } from "@makeplane/propel/icons";
+import { IconButton } from "@plane/propel/icon-button";
+import { TOAST_TYPE, setToast } from "@plane/propel/toast";
+import { NewTabOutline, RefreshOutline, WorkItemsOutline } from "@makeplane/propel/icons";
 import { Tooltip } from "@makeplane/propel/components/tooltip";
 import { EIssuesStoreType } from "@plane/types";
 import { Breadcrumbs, Header } from "@plane/ui";
@@ -38,8 +41,10 @@ export const IssuesHeader = observer(function IssuesHeader() {
   const { workspaceSlug, projectId } = useParams();
   // store hooks
   const {
-    issues: { getGroupIssueCount },
+    issues: { getGroupIssueCount, fetchIssuesWithExistingPagination },
   } = useIssues(EIssuesStoreType.PROJECT);
+  // states
+  const [isRefreshing, setIsRefreshing] = useState(false);
   // i18n
   const { t } = useTranslation();
 
@@ -59,6 +64,19 @@ export const IssuesHeader = observer(function IssuesHeader() {
     [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
     EUserPermissionsLevel.PROJECT
   );
+
+  // re-fetch the list with the current filters, grouping and layout
+  const handleRefresh = async () => {
+    if (!workspaceSlug || !projectId || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await fetchIssuesWithExistingPagination(workspaceSlug.toString(), projectId.toString(), "mutation");
+    } catch {
+      setToast({ type: TOAST_TYPE.ERROR, title: t("toast.error"), message: t("issue.refresh_error") });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <Header>
@@ -105,6 +123,16 @@ export const IssuesHeader = observer(function IssuesHeader() {
         )}
       </Header.LeftItem>
       <Header.RightItem>
+        <Tooltip label={t("refresh")} side="bottom" disabled={isMobile}>
+          <IconButton
+            size="base"
+            variant="ghost"
+            icon={RefreshOutline}
+            aria-label={t("refresh")}
+            className={isRefreshing ? "animate-spin" : ""}
+            onClick={() => void handleRefresh()}
+          />
+        </Tooltip>
         <div className="hidden gap-2 md:flex">
           <HeaderFilters
             projectId={projectId}

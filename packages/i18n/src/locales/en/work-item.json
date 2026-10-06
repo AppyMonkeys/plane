@@ -268,7 +268,8 @@
       "click_to_downvote": "Click to downvote",
       "click_to_view_upvotes": "Click to view upvotes",
       "click_to_view_downvotes": "Click to view downvotes"
-    }
+    },
+    "refresh_error": "Work items could not be refreshed. Please try again."
   },
   "sub_work_item": {
     "update": {

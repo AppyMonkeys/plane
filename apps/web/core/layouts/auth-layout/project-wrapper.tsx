@@ -37,6 +37,8 @@ import { useProjectState } from "@/hooks/store/use-project-state";
 import { useProjectView } from "@/hooks/store/use-project-view";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
 import { useTimeLineChart } from "@/hooks/use-timeline-chart";
+// helpers
+import { rememberLastVisitedProject } from "@/helpers/last-visited-project.helper";
 
 interface IProjectAuthWrapper {
   workspaceSlug: string;
@@ -78,6 +80,11 @@ export const ProjectAuthWrapper = observer(function ProjectAuthWrapper(props: IP
     initGantt();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // remember this project so the Inbox can link back to it
+  useEffect(() => {
+    if (workspaceSlug && projectId) rememberLastVisitedProject(workspaceSlug, projectId);
+  }, [workspaceSlug, projectId]);
 
   // fetching project details
   const { isLoading: isProjectDetailsLoading, error: projectDetailsError } = useSWR(

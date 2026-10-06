@@ -53,6 +53,8 @@
       "1_week": "1 week",
       "2_weeks": "2 weeks",
       "custom": "Custom"
-    }
+    },
+    "back_to_project": "Back to {project}",
+    "back_to_home": "Back to home"
   }
 }
