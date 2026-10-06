@@ -11,8 +11,9 @@ from rest_framework.response import Response
 
 # Module imports
 from .base import BaseAPIView
-from plane.db.models import Issue, ProjectMember, IssueRelation
+from plane.db.models import Issue, Project, ProjectMember, IssueRelation
 from plane.utils.issue_search import search_issues
+from plane.utils.issue_types import project_issue_types
 
 
 class IssueSearchEndpoint(BaseAPIView):
@@ -43,6 +44,22 @@ class IssueSearchEndpoint(BaseAPIView):
         if issue:
             issues = issues.filter(~Q(pk=issue_id), ~Q(pk=issue.parent_id), ~Q(parent_id=issue_id))
         return issues
+
+    def filter_parent_candidates_to_epics(self, project_id: str, issues: QuerySet) -> QuerySet:
+        """
+        A parent is picked from the project's epics, as in Jira -- when the project uses work item
+        types and has an epic type. Projects without one keep offering every work item.
+        """
+        if not Project.objects.filter(pk=project_id, is_issue_type_enabled=True).exists():
+            return issues
+        epic_type_ids = list(
+            project_issue_types(project_id)
+            .filter(Q(is_epic=True) | Q(name__iexact="epic"))
+            .values_list("id", flat=True)
+        )
+        if not epic_type_ids:
+            return issues
+        return issues.filter(type_id__in=epic_type_ids)
 
     def filter_issues_excluding_related_issues(self, issue_id: str, issues: QuerySet) -> QuerySet:
         """
@@ -122,6 +139,9 @@ class IssueSearchEndpoint(BaseAPIView):
 
         if parent == "true" and issue_id:
             issues = self.search_issues_and_excluding_parent(issues, issue_id)
+
+        if parent == "true":
+            issues = self.filter_parent_candidates_to_epics(project_id, issues)
 
         if issue_relation == "true" and issue_id:
             issues = self.filter_issues_excluding_related_issues(issue_id, issues)

@@ -188,6 +188,41 @@ class TestIssueTypeAppContract:
 
 
 @pytest.mark.contract
+class TestParentPickerOffersEpics:
+    def search(self, client, workspace, project, **params):
+        response = client.get(
+            f"/api/workspaces/{workspace.slug}/projects/{project.id}/search-issues/",
+            {"workspace_search": "false", **params},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        return sorted(issue["name"] for issue in response.data)
+
+    @pytest.mark.django_db
+    def test_only_epics_are_offered_as_parent(self, session_client, workspace, typed_project):
+        types = {t.name: t for t in project_issue_types(typed_project.id)}
+        Issue.objects.create(name="Big epic", project=typed_project, workspace=workspace, type=types["Epic"])
+        Issue.objects.create(name="Other epic", project=typed_project, workspace=workspace, type=types["Epic"])
+        child = Issue.objects.create(name="A task", project=typed_project, workspace=workspace, type=types["Task"])
+        Issue.objects.create(name="A bug", project=typed_project, workspace=workspace, type=types["Bug"])
+
+        # from a ticket page, and from the create dialog (no ticket yet)
+        assert self.search(session_client, workspace, typed_project, parent="true", issue_id=str(child.id)) == [
+            "Big epic",
+            "Other epic",
+        ]
+        assert self.search(session_client, workspace, typed_project, parent="true") == ["Big epic", "Other epic"]
+        # other pickers (e.g. relations) still see everything
+        assert len(self.search(session_client, workspace, typed_project)) == 4
+
+    @pytest.mark.django_db
+    def test_projects_without_types_offer_every_work_item(self, session_client, workspace, project):
+        Issue.objects.create(name="One", project=project, workspace=workspace)
+        Issue.objects.create(name="Two", project=project, workspace=workspace)
+
+        assert self.search(session_client, workspace, project, parent="true") == ["One", "Two"]
+
+
+@pytest.mark.contract
 class TestConvertLabelsToIssueTypes:
     @pytest.mark.django_db
     def test_labels_become_types(self, workspace, project):
