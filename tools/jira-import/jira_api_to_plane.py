@@ -102,6 +102,14 @@ PEOPLE = {
     "Saket Palla": "saket@appymonkeys.com",
     "Satish Kumar": "satish.kumar@appymonkeys.com",
     "A G": "angupte@gmail.com",
+    "Arjun Gupte": "angupte@gmail.com",
+    # accounts created with provision_former_assignees.py
+    "Derek Matthew Biju": "derek.biju@appymonkeys.com",
+    "Lamminlun Simte": "laminlunn.simte@appymonkeys.com",
+    "laminlunn.simte": "laminlunn.simte@appymonkeys.com",
+    "Projjal Chakrabarti": "projjal.chakrabarti@appymonkeys.com",
+    "prajwal.k": "prajwal.k@appymonkeys.com",
+    "Pavithrasri Poornachandran": "pavithrasri.poornachandran@appymonkeys.com",
 }
 
 LABEL_COLOR = "#6B7280"
