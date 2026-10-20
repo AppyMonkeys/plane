@@ -85,6 +85,7 @@ from .workspace.sticky import WorkspaceStickyViewSet
 
 from .state.base import StateViewSet, IntakeStateEndpoint
 from .issue_type.base import IssueTypeViewSet, WorkspaceIssueTypesEndpoint
+from .work_item_template.base import WorkItemTemplateViewSet
 from .view.base import (
     WorkspaceViewViewSet,
     WorkspaceViewIssuesViewSet,

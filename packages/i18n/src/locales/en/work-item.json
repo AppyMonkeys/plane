@@ -449,5 +449,40 @@
       "label": "Epic Title",
       "required": "Epic title is required."
     }
+  },
+  "work_item_templates": {
+    "label": "Templates",
+    "select": {
+      "button": "Template",
+      "search": "Find template",
+      "empty": "No templates yet",
+      "no_match": "No matching templates",
+      "save_as": "Save as template",
+      "update": "Update \"{name}\" with this form",
+      "manage": "Manage templates",
+      "clear": "Don't use a template"
+    },
+    "save": {
+      "title": "Save as template",
+      "description": "Everyone in this project can start a work item from it. It saves the title, description, type, state, priority, labels, assignees and modules.",
+      "name_placeholder": "Template name, e.g. Bug report",
+      "name_required": "Give the template a name",
+      "save": "Save template",
+      "saving": "Saving",
+      "error": "Couldn't save the template",
+      "success": "Template \"{name}\" saved",
+      "updated": "Template \"{name}\" updated"
+    },
+    "settings": {
+      "title": "Templates",
+      "description": "Start new work items with fields already filled in. Create one from the Create work item dialog (Template ▾ → Save as template) or from an open work item's ⋯ menu.",
+      "empty": "No templates yet. Fill in the Create work item dialog and choose Template ▾ → Save as template.",
+      "rename": "Rename",
+      "delete": "Delete",
+      "delete_title": "Delete template",
+      "delete_content": "Delete \"{name}\"? Work items already created from it stay as they are.",
+      "deleted": "Template deleted",
+      "delete_error": "Couldn't delete the template"
+    }
   }
 }

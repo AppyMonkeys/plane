@@ -47,6 +47,7 @@ from .project import (
 )
 from .state import StateSerializer, StateLiteSerializer
 from .issue_type import IssueTypeSerializer
+from .work_item_template import WorkItemTemplateSerializer
 from .view import IssueViewSerializer, ViewIssueListSerializer
 from .cycle import (
     CycleSerializer,

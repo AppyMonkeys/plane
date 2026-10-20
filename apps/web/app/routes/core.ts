@@ -333,6 +333,11 @@ export const coreRoutes: RouteConfigEntry[] = [
               ":workspaceSlug/settings/projects/:projectId/work-item-types",
               "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/work-item-types/page.tsx"
             ),
+            // Project Work Item Templates
+            route(
+              ":workspaceSlug/settings/projects/:projectId/work-item-templates",
+              "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/work-item-templates/page.tsx"
+            ),
             // Project Labels
             route(
               ":workspaceSlug/settings/projects/:projectId/labels",

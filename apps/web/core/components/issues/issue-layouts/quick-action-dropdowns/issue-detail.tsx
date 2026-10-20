@@ -6,15 +6,21 @@
 
 import { useState } from "react";
 import { omit } from "lodash-es";
+import { LayoutTemplate } from "lucide-react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 import { MoreHorizontalOutline } from "@makeplane/propel/icons";
 // plane imports
 import { ARCHIVABLE_STATE_GROUPS, EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import type { TIssue } from "@plane/types";
 import { EIssuesStoreType } from "@plane/types";
 import { ContextMenu, CustomMenu } from "@plane/ui";
+import type { TContextMenuItem } from "@plane/ui";
 import { cn } from "@plane/utils";
+// components
+import { getTemplateDataFromForm } from "@/components/work-item-templates/helpers";
+import { SaveWorkItemTemplateModal } from "@/components/work-item-templates/save-modal";
 // hooks
 import { useIssues } from "@/hooks/store/use-issues";
 import { useProject } from "@/hooks/store/use-project";
@@ -64,6 +70,9 @@ export const WorkItemDetailQuickActions = observer(function WorkItemDetailQuickA
   const [deleteIssueModal, setDeleteIssueModal] = useState(false);
   const [archiveIssueModal, setArchiveIssueModal] = useState(false);
   const [_, setDuplicateWorkItemModal] = useState(false);
+  const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState(false);
+  // plane hooks
+  const { t } = useTranslation();
   // store hooks
   const { allowPermissions } = useUserPermissions();
   const { issuesFilter } = useIssues(EIssuesStoreType.PROJECT);
@@ -149,7 +158,16 @@ export const WorkItemDetailQuickActions = observer(function WorkItemDetailQuickA
   //   const MENU_ITEMS = useWorkItemDetailMenuItems(menuItemProps);
   const baseMenuItems = useWorkItemDetailMenuItems(menuItemProps);
 
-  const MENU_ITEMS = baseMenuItems
+  const MENU_ITEMS: TContextMenuItem[] = [
+    ...baseMenuItems,
+    {
+      key: "save-as-template",
+      title: t("work_item_templates.select.save_as"),
+      icon: LayoutTemplate,
+      action: () => setIsSaveTemplateModalOpen(true),
+      shouldRender: isEditingAllowed && !issue.archived_at && !!issue.project_id,
+    },
+  ]
     // oxlint-disable-next-line oxc/no-map-spread
     .map((item) => {
       // Customize edit action for work item
@@ -224,6 +242,15 @@ export const WorkItemDetailQuickActions = observer(function WorkItemDetailQuickA
         fetchIssueDetails={false}
       />
 
+      {issue.project_id && (
+        <SaveWorkItemTemplateModal
+          isOpen={isSaveTemplateModalOpen}
+          onClose={() => setIsSaveTemplateModalOpen(false)}
+          workspaceSlug={workspaceSlug?.toString()}
+          projectId={issue.project_id}
+          data={getTemplateDataFromForm(issue)}
+        />
+      )}
       <ContextMenu parentRef={parentRef} items={CONTEXT_MENU_ITEMS} />
       <CustomMenu
         ellipsis

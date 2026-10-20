@@ -38,6 +38,8 @@ import {
   IssueTitleInput,
 } from "@/components/issues/issue-modal/components";
 import { useAddPendingAttachments } from "@/components/issues/issue-modal/components/attachments";
+import { getTemplateDataFromForm } from "@/components/work-item-templates/helpers";
+import { WorkItemTemplateSelect } from "@/components/work-item-templates/select";
 // helpers
 // hooks
 import { useIssueModal } from "@/hooks/context/use-issue-modal";
@@ -385,6 +387,25 @@ export const IssueFormRoot = observer(function IssueFormRoot(props: IssueFormPro
                     disabled={!!data?.id || !!data?.sourceIssueId || isProjectSelectionDisabled}
                     handleFormChange={handleFormChange}
                   />
+                  {/* templates only make sense for a new work item */}
+                  {!data?.id && projectId && (
+                    <WorkItemTemplateSelect
+                      workspaceSlug={workspaceSlug?.toString()}
+                      projectId={projectId}
+                      value={workItemTemplateId}
+                      onChange={(templateId) => {
+                        if (templateId) {
+                          setWorkItemTemplateId(templateId);
+                          return;
+                        }
+                        setWorkItemTemplateId(null);
+                        reset({ ...DEFAULT_WORK_ITEM_FORM_VALUES, project_id: projectId });
+                        editorRef.current?.clearEditor();
+                      }}
+                      getFormData={() => getTemplateDataFromForm(getValues())}
+                      disabled={isDisabled}
+                    />
+                  )}
                 </div>
               </div>
               {watch("parent_id") && selectedParentIssue && (

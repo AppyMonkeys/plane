@@ -47,6 +47,7 @@ export * from "./search";
 export * from "./settings";
 export * from "./state";
 export * from "./work-item-type";
+export * from "./work-item-template";
 export * from "./stickies";
 export * from "./timezone";
 export * from "./users";
