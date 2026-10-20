@@ -81,7 +81,11 @@ export const IssueParentSelect = observer(function IssueParentSelect(props: TIss
         workspaceSlug={workspaceSlug}
         projectId={projectId}
         issueId={issueId}
+        selectedId={issue.parent_id}
         onChange={(selected) => void handleParentIssue(selected.id)}
+        onRemove={() => {
+          if (issue.parent_id) void handleRemoveSubIssue(workspaceSlug, projectId, issue.parent_id, issueId);
+        }}
         disabled={disabled}
         buttonClassName={cn(
           "group flex items-center justify-between gap-2 rounded-sm px-2 py-0.5 outline-none",

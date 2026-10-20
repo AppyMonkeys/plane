@@ -4,7 +4,6 @@
  * See the LICENSE file for details.
  */
 
-import { useState } from "react";
 import { observer } from "mobx-react";
 import type { Control } from "react-hook-form";
 import { Controller } from "react-hook-form";
@@ -14,7 +13,6 @@ import { ParentOutline } from "@makeplane/propel/icons";
 // types
 import type { ISearchIssueResponse, TIssue } from "@plane/types";
 // ui
-import { CustomMenu } from "@plane/ui";
 import { getDate, renderFormattedPayloadDate, getTabIndex } from "@plane/utils";
 // components
 import { CycleDropdown } from "@/components/dropdowns/cycle";
@@ -25,7 +23,6 @@ import { ModuleDropdown } from "@/components/dropdowns/module/dropdown";
 import { PriorityDropdown } from "@/components/dropdowns/priority";
 import { StateDropdown } from "@/components/dropdowns/state/dropdown";
 import { ParentDropdown } from "@/components/issues/parent-dropdown";
-import { ParentIssuesListModal } from "@/components/issues/parent-issues-list-modal";
 import { IssueLabelSelect } from "@/components/issues/select";
 import { IssueIdentifier } from "@/components/issues/issue-detail/issue-identifier";
 import { WorkItemTypeDropdown } from "@/components/work-item-types/dropdown";
@@ -47,7 +44,7 @@ type TIssueDefaultPropertiesProps = {
   parentId: string | null;
   isDraft: boolean;
   handleFormChange: () => void;
-  setSelectedParentIssue: (issue: ISearchIssueResponse) => void;
+  setSelectedParentIssue: (issue: ISearchIssueResponse | null) => void;
 };
 
 export const IssueDefaultProperties = observer(function IssueDefaultProperties(props: TIssueDefaultPropertiesProps) {
@@ -65,7 +62,6 @@ export const IssueDefaultProperties = observer(function IssueDefaultProperties(p
     setSelectedParentIssue,
   } = props;
   // states
-  const [parentIssueListModalOpen, setParentIssueListModalOpen] = useState(false);
   // store hooks
   const { t } = useTranslation();
   const { areEstimateEnabledByProjectId } = useProjectEstimates();
@@ -286,52 +282,8 @@ export const IssueDefaultProperties = observer(function IssueDefaultProperties(p
           )}
         />
       )}
-      <div className="h-7">
-        {parentId ? (
-          <CustomMenu
-            customButton={
-              <button
-                type="button"
-                className="flex h-full cursor-pointer items-center justify-between gap-1 rounded-sm border-[0.5px] border-strong px-2 py-0.5 text-caption-sm-regular hover:bg-layer-1"
-              >
-                {selectedParentIssue?.project_id && (
-                  <IssueIdentifier
-                    projectId={selectedParentIssue.project_id}
-                    issueTypeId={selectedParentIssue.type_id}
-                    projectIdentifier={selectedParentIssue?.project__identifier}
-                    issueSequenceId={selectedParentIssue.sequence_id}
-                    size="xs"
-                  />
-                )}
-              </button>
-            }
-            placement="bottom-start"
-            className="h-full w-full"
-            customButtonClassName="h-full"
-            tabIndex={getIndex("parent_id")}
-          >
-            <>
-              <CustomMenu.MenuItem className="!p-1" onClick={() => setParentIssueListModalOpen(true)}>
-                {t("change_parent_issue")}
-              </CustomMenu.MenuItem>
-              <Controller
-                control={control}
-                name="parent_id"
-                render={({ field: { onChange } }) => (
-                  <CustomMenu.MenuItem
-                    className="!p-1"
-                    onClick={() => {
-                      onChange(null);
-                      handleFormChange();
-                    }}
-                  >
-                    {t("remove_parent_issue")}
-                  </CustomMenu.MenuItem>
-                )}
-              />
-            </>
-          </CustomMenu>
-        ) : projectId ? (
+      {projectId && (
+        <div className="h-7">
           <Controller
             control={control}
             name="parent_id"
@@ -340,40 +292,43 @@ export const IssueDefaultProperties = observer(function IssueDefaultProperties(p
                 workspaceSlug={workspaceSlug}
                 projectId={projectId}
                 issueId={isDraft ? undefined : id}
+                selectedId={parentId}
                 onChange={(issue) => {
                   onChange(issue.id);
                   handleFormChange();
                   setSelectedParentIssue(issue);
                 }}
+                onRemove={() => {
+                  onChange(null);
+                  setSelectedParentIssue(null);
+                  handleFormChange();
+                }}
                 buttonClassName="flex h-full cursor-pointer items-center justify-between gap-1 rounded-sm border-[0.5px] border-strong px-2 py-0.5 text-caption-sm-regular hover:bg-layer-1"
                 button={
-                  <>
-                    <ParentOutline className="h-3 w-3 flex-shrink-0" />
-                    <span className="whitespace-nowrap">{t("add_parent")}</span>
-                  </>
+                  parentId ? (
+                    selectedParentIssue?.project_id ? (
+                      <IssueIdentifier
+                        projectId={selectedParentIssue.project_id}
+                        issueTypeId={selectedParentIssue.type_id}
+                        projectIdentifier={selectedParentIssue.project__identifier}
+                        issueSequenceId={selectedParentIssue.sequence_id}
+                        size="xs"
+                      />
+                    ) : (
+                      <ParentOutline className="h-3 w-3 flex-shrink-0" />
+                    )
+                  ) : (
+                    <>
+                      <ParentOutline className="h-3 w-3 flex-shrink-0" />
+                      <span className="whitespace-nowrap">{t("add_parent")}</span>
+                    </>
+                  )
                 }
               />
             )}
           />
-        ) : null}
-      </div>
-      <Controller
-        control={control}
-        name="parent_id"
-        render={({ field: { onChange } }) => (
-          <ParentIssuesListModal
-            isOpen={parentIssueListModalOpen}
-            handleClose={() => setParentIssueListModalOpen(false)}
-            onChange={(issue) => {
-              onChange(issue.id);
-              handleFormChange();
-              setSelectedParentIssue(issue);
-            }}
-            projectId={projectId ?? undefined}
-            issueId={isDraft ? undefined : id}
-          />
-        )}
-      />
+        </div>
+      )}
     </div>
   );
 });

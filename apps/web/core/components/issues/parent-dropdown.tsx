@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { usePopper } from "react-popper";
-import { SearchOutline } from "@makeplane/propel/icons";
+import { SearchOutline, TickOutline } from "@makeplane/propel/icons";
 import { Combobox } from "@headlessui/react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
@@ -21,12 +21,19 @@ import { ProjectService } from "@/services/project";
 
 const projectService = new ProjectService();
 
+/** Option value for the "Remove parent" row at the bottom of the list. */
+const REMOVE_PARENT = "remove-parent";
+
 type TParentDropdownProps = {
   workspaceSlug: string;
   projectId: string;
   /** The work item getting a parent, when it already exists (keeps itself and its children out of the list). */
   issueId?: string;
   onChange: (issue: ISearchIssueResponse) => void;
+  /** The current parent, ticked in the list. */
+  selectedId?: string | null;
+  /** Shows a "Remove parent" row when there is a parent to remove. */
+  onRemove?: () => void;
   /** What the trigger button shows. */
   button: React.ReactNode;
   buttonClassName?: string;
@@ -40,7 +47,17 @@ type TParentDropdownProps = {
  * that have them.
  */
 export function ParentDropdown(props: TParentDropdownProps) {
-  const { workspaceSlug, projectId, issueId, onChange, button, buttonClassName, disabled = false } = props;
+  const {
+    workspaceSlug,
+    projectId,
+    issueId,
+    onChange,
+    selectedId,
+    onRemove,
+    button,
+    buttonClassName,
+    disabled = false,
+  } = props;
   // plane hooks
   const { t } = useTranslation();
   // states
@@ -89,9 +106,10 @@ export function ParentDropdown(props: TParentDropdownProps) {
       as="div"
       className="h-full flex-shrink-0 text-left"
       value={null}
-      onChange={(issue: ISearchIssueResponse | null) => {
+      onChange={(issue: ISearchIssueResponse | typeof REMOVE_PARENT | null) => {
         if (!issue) return;
-        onChange(issue);
+        if (issue === REMOVE_PARENT) onRemove?.();
+        else if (issue.id !== selectedId) onChange(issue);
         setQuery("");
       }}
       disabled={disabled}
@@ -157,7 +175,8 @@ export function ParentDropdown(props: TParentDropdownProps) {
                         variant="secondary"
                       />
                     </span>
-                    <span className="truncate">{issue.name}</span>
+                    <span className="flex-grow truncate">{issue.name}</span>
+                    {issue.id === selectedId && <TickOutline className="h-3.5 w-3.5 flex-shrink-0" />}
                   </Combobox.Option>
                 ))}
               </ul>
@@ -167,6 +186,20 @@ export function ParentDropdown(props: TParentDropdownProps) {
               </p>
             )}
           </div>
+          {selectedId && onRemove && (
+            <div className="mt-2 border-t border-subtle px-2 pt-2">
+              <Combobox.Option
+                value={REMOVE_PARENT}
+                className={({ active }) =>
+                  cn("cursor-pointer rounded-sm px-1 py-1.5 text-danger-primary select-none", {
+                    "bg-layer-1": active,
+                  })
+                }
+              >
+                {t("remove_parent_issue")}
+              </Combobox.Option>
+            </div>
+          )}
         </div>
       </Combobox.Options>
     </Combobox>
