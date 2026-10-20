@@ -281,7 +281,15 @@
       "upload_failed_title": "Some attachments failed to upload",
       "upload_failed": "The work item was created, but these could not be attached: {files}"
     },
-    "no_matching_parent": "No matching work items"
+    "no_matching_parent": "No matching work items",
+    "reopen": {
+      "label": "Reopen",
+      "tooltip": "Open this work item again"
+    },
+    "duplicate_of": {
+      "success_title": "Marked as duplicate",
+      "success": "Linked as a duplicate of {ids}"
+    }
   },
   "sub_work_item": {
     "update": {

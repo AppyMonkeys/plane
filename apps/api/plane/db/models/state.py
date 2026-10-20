@@ -38,6 +38,13 @@ DEFAULT_STATES = [
         "default": True,
     },
     {
+        # a closed work item that was opened again (Jira's "Reopened"); still counts as open
+        "name": "Reopened",
+        "color": "#F97316",
+        "sequence": 30000,
+        "group": StateGroup.UNSTARTED.value,
+    },
+    {
         "name": "In Progress",
         "color": "#F59E0B",
         "sequence": 35000,
@@ -53,6 +60,13 @@ DEFAULT_STATES = [
         "name": "Cancelled",
         "color": "#9AA4BC",
         "sequence": 55000,
+        "group": StateGroup.CANCELLED.value,
+    },
+    {
+        # closed because another work item covers it; the web app asks which one
+        "name": "Duplicate",
+        "color": "#9AA4BC",
+        "sequence": 57000,
         "group": StateGroup.CANCELLED.value,
     },
     {
