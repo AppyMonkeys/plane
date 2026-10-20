@@ -10,11 +10,13 @@ from django.db import models
 from django.db.models import Q
 from django_filters import FilterSet, filters
 
-from plane.db.models import Issue, IssueAssignee
+from plane.db.models import Issue, IssueAssignee, IssueComment
 
 # Value of assignee_id__in that stands for "no assignee" (Jira's "Unassigned")
 UNASSIGNED = "none"
 # A work item key such as LOKKO-123, or just its number
+# A search term: a "quoted phrase" or a run of non-space characters
+SEARCH_TERM_RE = re.compile(r'"([^"]+)"|(\S+)')
 WORK_ITEM_KEY_RE = re.compile(r"^(?:(?P<identifier>[A-Za-z0-9]+)-)?(?P<sequence>\d+)$")
 
 
@@ -146,7 +148,7 @@ class IssueFilterSet(BaseFilterSet):
     # ids, and/or "none" for work items nobody is assigned to
     assignee_id__in = CharInFilter(method="filter_assignee_id_in", lookup_expr="in")
 
-    # Free-text search (Jira's `text ~`): title, description, or a work item key like LOKKO-12.
+    # Free-text search (Jira's `text ~`): title, description, comments, or a work item key like LOKKO-12.
     # Sent as {"text__exact": "..."} because the filter expression only has exact/in/range operators.
     text = filters.CharFilter(method="filter_text")
     text__exact = filters.CharFilter(method="filter_text")
@@ -264,11 +266,34 @@ class IssueFilterSet(BaseFilterSet):
         return query
 
     def filter_text(self, queryset, name, value):
-        """Title or description contains the text, or the text is the work item's key"""
+        """Jira-style text search: every word must appear in the title, description or a comment.
+
+        Words are separated by spaces; "quoted phrases" stay together. A trailing * matches the start
+        of a word (track* finds tracking, tracked); without it a word matches anywhere in the text.
+        The whole text may also be a work item key such as LOKKO-12.
+        """
         text = (value or "").strip()
         if not text:
             return Q()
-        query = Q(name__icontains=text) | Q(description_stripped__icontains=text)
+        query = Q()
+        for phrase, word in SEARCH_TERM_RE.findall(text):
+            term = (phrase or word).strip()
+            if term.endswith("*") and not phrase:
+                term = term.rstrip("*")
+                lookup, pattern = "iregex", rf"\m{re.escape(term)}"
+            else:
+                lookup, pattern = "icontains", term
+            if not term:
+                continue
+            query &= (
+                Q(**{f"name__{lookup}": pattern})
+                | Q(**{f"description_stripped__{lookup}": pattern})
+                | Q(
+                    pk__in=IssueComment.objects.filter(
+                        deleted_at__isnull=True, **{f"comment_stripped__{lookup}": pattern}
+                    ).values("issue_id")
+                )
+            )
         key = WORK_ITEM_KEY_RE.match(text)
         if key:
             key_query = Q(sequence_id=int(key.group("sequence")))

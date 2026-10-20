@@ -9,7 +9,17 @@ import pytest
 from django.utils import timezone
 from rest_framework import status
 
-from plane.db.models import Issue, IssueAssignee, Label, Project, ProjectMember, State, User, WorkspaceMember
+from plane.db.models import (
+    Issue,
+    IssueAssignee,
+    IssueComment,
+    Label,
+    Project,
+    ProjectMember,
+    State,
+    User,
+    WorkspaceMember,
+)
 from plane.utils.issue_types import enable_issue_types, project_issue_types
 
 
@@ -89,6 +99,33 @@ class TestFilterBarConditions:
         ]
 
     @pytest.mark.django_db
+    def test_text_needs_every_word_and_star_matches_word_starts(self, session_client, workspace, project):
+        Issue.objects.create(name="Tracking screen crashes on open", project=project)
+        Issue.objects.create(name="App crashed", description_html="<p>while track loading</p>", project=project)
+        commented = Issue.objects.create(name="Odd behaviour", project=project)
+        IssueComment.objects.create(issue=commented, project=project, comment_html="<p>tracker crashing again</p>")
+        deleted_comment = Issue.objects.create(name="Old report", project=project)
+        IssueComment.objects.create(
+            issue=deleted_comment,
+            project=project,
+            comment_html="<p>track crash</p>",
+            deleted_at=timezone.now(),
+        )
+        Issue.objects.create(name="Only tracking here", project=project)
+        Issue.objects.create(name="Backtracking crash", project=project)
+
+        assert list_names(session_client, workspace, project, {"text__exact": "track* crash*"}) == [
+            "App crashed",
+            "Odd behaviour",
+            "Tracking screen crashes on open",
+        ]
+        # without a star a word matches anywhere, so "backtracking" counts
+        assert "Backtracking crash" in list_names(session_client, workspace, project, {"text__exact": "track crash"})
+        assert list_names(session_client, workspace, project, {"text__exact": '"screen crashes"'}) == [
+            "Tracking screen crashes on open"
+        ]
+
+    @pytest.mark.django_db
     def test_parent(self, session_client, workspace, project):
         epic = Issue.objects.create(name="Epic", project=project)
         Issue.objects.create(name="child", parent=epic, project=project)
@@ -122,6 +159,13 @@ class TestJQLEndpoint:
         week_ago = (timezone.localtime(timezone.now()) - datetime.timedelta(days=7)).date().isoformat()
         assert conditions["created_at__range"] == f"{week_ago},9999-12-31"
         assert response.data["order_by"] == "-priority"
+
+    @pytest.mark.django_db
+    def test_textfields_is_a_text_search(self, session_client, workspace, project):
+        response = jql(session_client, workspace, project, jql='textfields ~ "track* crash*"')
+
+        assert response.status_code == status.HTTP_200_OK, response.data
+        assert response.data["filters"] == {"and": [{"text__exact": "track* crash*"}]}
 
     @pytest.mark.django_db
     def test_filters_round_trip_through_jql(self, session_client, workspace, project, teammate):

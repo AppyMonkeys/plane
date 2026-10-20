@@ -45,6 +45,8 @@ FIELD_ALIASES = {
     "epic link": "parent",
     "parentepic": "parent",
     "text": "text",
+    "textfields": "text",
+    "comment": "text",
     "summary": "text",
     "description": "text",
     "key": "key",
