@@ -286,6 +286,15 @@ class IssueViewSet(BaseViewSet):
         # Keeping a copy of the queryset before applying annotations
         filtered_issue_queryset = copy.deepcopy(issue_queryset)
 
+        # The filtered queryset is DISTINCT, because filters may join to-many tables (assignees,
+        # labels, ...). Annotating a DISTINCT query makes Postgres run every per-row subquery (cycle,
+        # counts, assignee/label/module arrays) for *all* matching work items before it can sort and
+        # cut out the page -- seconds on a project with thousands of work items. For an ungrouped
+        # list, select the matching ids in a subquery instead: the outer query has no to-many joins,
+        # needs no DISTINCT, and the subqueries only run for the rows of the page.
+        if not request.GET.get("group_by", False):
+            issue_queryset = Issue.issue_objects.filter(pk__in=issue_queryset.values("pk"))
+
         # Applying annotations to the issue queryset
         issue_queryset = self.apply_annotations(issue_queryset)
 
@@ -746,21 +755,11 @@ class ProjectUserDisplayPropertyEndpoint(BaseAPIView):
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
     def patch(self, request, slug, project_id):
         try:
-            issue_property = ProjectUserProperty.objects.get(
-                user=request.user, 
-                project_id=project_id
-            )
+            issue_property = ProjectUserProperty.objects.get(user=request.user, project_id=project_id)
         except ProjectUserProperty.DoesNotExist:
-            issue_property = ProjectUserProperty.objects.create(
-                user=request.user, 
-                project_id=project_id
-            )
+            issue_property = ProjectUserProperty.objects.create(user=request.user, project_id=project_id)
 
-        serializer = ProjectUserPropertySerializer(
-            issue_property, 
-            data=request.data,
-            partial=True
-        )
+        serializer = ProjectUserPropertySerializer(issue_property, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
