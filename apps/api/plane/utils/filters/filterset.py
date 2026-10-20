@@ -3,12 +3,19 @@
 # See the LICENSE file for details.
 
 import copy
+import re
+import uuid
 
 from django.db import models
 from django.db.models import Q
 from django_filters import FilterSet, filters
 
-from plane.db.models import Issue
+from plane.db.models import Issue, IssueAssignee
+
+# Value of assignee_id__in that stands for "no assignee" (Jira's "Unassigned")
+UNASSIGNED = "none"
+# A work item key such as LOKKO-123, or just its number
+WORK_ITEM_KEY_RE = re.compile(r"^(?:(?P<identifier>[A-Za-z0-9]+)-)?(?P<sequence>\d+)$")
 
 
 class UUIDInFilter(filters.BaseInFilter, filters.UUIDFilter):
@@ -136,7 +143,16 @@ class IssueFilterSet(BaseFilterSet):
     # Custom filter methods to handle soft delete exclusion for relations
 
     assignee_id = filters.UUIDFilter(method="filter_assignee_id")
-    assignee_id__in = UUIDInFilter(method="filter_assignee_id_in", lookup_expr="in")
+    # ids, and/or "none" for work items nobody is assigned to
+    assignee_id__in = CharInFilter(method="filter_assignee_id_in", lookup_expr="in")
+
+    # Free-text search (Jira's `text ~`): title, description, or a work item key like LOKKO-12.
+    # Sent as {"text__exact": "..."} because the filter expression only has exact/in/range operators.
+    text = filters.CharFilter(method="filter_text")
+    text__exact = filters.CharFilter(method="filter_text")
+
+    parent_id = filters.UUIDFilter(field_name="parent_id")
+    parent_id__in = UUIDInFilter(field_name="parent_id", lookup_expr="in")
 
     cycle_id = filters.UUIDFilter(method="filter_cycle_id")
     cycle_id__in = UUIDInFilter(method="filter_cycle_id_in", lookup_expr="in")
@@ -230,11 +246,36 @@ class IssueFilterSet(BaseFilterSet):
         )
 
     def filter_assignee_id_in(self, queryset, name, value):
-        """Filter by assignee IDs (in), excluding soft deleted users"""
-        return Q(
-            issue_assignee__assignee_id__in=value,
-            issue_assignee__deleted_at__isnull=True,
-        )
+        """Filter by assignee IDs (in), excluding soft deleted users; "none" matches unassigned work items"""
+        assignee_ids = []
+        for item in value:
+            try:
+                assignee_ids.append(uuid.UUID(str(item)))
+            except ValueError:
+                continue
+        query = Q(pk__in=[])
+        if assignee_ids:
+            query |= Q(
+                issue_assignee__assignee_id__in=assignee_ids,
+                issue_assignee__deleted_at__isnull=True,
+            )
+        if UNASSIGNED in [str(item).lower() for item in value]:
+            query |= ~Q(pk__in=IssueAssignee.objects.filter(deleted_at__isnull=True).values("issue_id"))
+        return query
+
+    def filter_text(self, queryset, name, value):
+        """Title or description contains the text, or the text is the work item's key"""
+        text = (value or "").strip()
+        if not text:
+            return Q()
+        query = Q(name__icontains=text) | Q(description_stripped__icontains=text)
+        key = WORK_ITEM_KEY_RE.match(text)
+        if key:
+            key_query = Q(sequence_id=int(key.group("sequence")))
+            if key.group("identifier"):
+                key_query &= Q(project__identifier__iexact=key.group("identifier"))
+            query |= key_query
+        return query
 
     def filter_cycle_id(self, queryset, name, value):
         """Filter by cycle ID, excluding soft deleted cycles"""

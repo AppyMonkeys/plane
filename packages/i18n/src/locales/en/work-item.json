@@ -484,5 +484,74 @@
       "deleted": "Template deleted",
       "delete_error": "Couldn't delete the template"
     }
+  },
+  "filter_bar": {
+    "search": "Search work items",
+    "find": "Find {field}",
+    "no_matches": "No matches",
+    "unknown": "Unknown",
+    "unassigned": "Unassigned",
+    "clear_field": "Clear",
+    "clear": "Clear filters",
+    "more": "More",
+    "mode": {
+      "basic": "Basic",
+      "jql": "JQL"
+    },
+    "fields": {
+      "type": "Type",
+      "status": "Status",
+      "assignee": "Assignee",
+      "priority": "Priority",
+      "labels": "Labels",
+      "reporter": "Reporter",
+      "created": "Created",
+      "updated": "Updated",
+      "due_date": "Due date",
+      "start_date": "Start date",
+      "parent": "Parent",
+      "cycle": "Cycle",
+      "module": "Module",
+      "status_category": "Status category"
+    },
+    "date": {
+      "today": "Today",
+      "last_7_days": "Last 7 days",
+      "last_30_days": "Last 30 days",
+      "this_month": "This month",
+      "next_7_days": "Next 7 days",
+      "from": "from {date}",
+      "until": "until {date}",
+      "from_label": "From",
+      "to_label": "To"
+    },
+    "quick": {
+      "label": "Quick filters:",
+      "mine": "Only my tickets",
+      "recently_updated": "Recently updated",
+      "unassigned": "Unassigned",
+      "open": "Open tickets"
+    },
+    "saved": {
+      "label": "Filters",
+      "empty": "No saved filters yet. Set some filters and choose Save filter.",
+      "starred": "Starred",
+      "mine": "My filters",
+      "shared": "Shared with the project",
+      "star": "Star",
+      "unstar": "Unstar",
+      "close": "Stop using this filter",
+      "save": "Save filter",
+      "save_as": "Save as",
+      "save_changes": "Save changes",
+      "updated": "Saved filter \"{name}\" updated",
+      "error": "Couldn't update the saved filter"
+    },
+    "jql": {
+      "label": "JQL query",
+      "search": "Search",
+      "error": "Couldn't run this JQL",
+      "placeholder": "project = LOKKO AND type = Bug AND status != Done ORDER BY created DESC"
+    }
   }
 }

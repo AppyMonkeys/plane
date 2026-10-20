@@ -108,7 +108,8 @@ export const HeaderFilters = observer(function HeaderFilters(props: Props) {
           activeLayout={activeLayout}
         />
       </div>
-      <WorkItemFiltersToggle entityType={storeType} entityId={projectId} />
+      {/* a project's work items use the Jira-style filter bar above the list instead */}
+      {storeType !== EIssuesStoreType.PROJECT && <WorkItemFiltersToggle entityType={storeType} entityId={projectId} />}
       <FiltersDropdown
         miniIcon={<PreferencesOutline className="size-3.5" />}
         title={t("common.display")}

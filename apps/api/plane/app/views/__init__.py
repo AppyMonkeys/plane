@@ -147,6 +147,7 @@ from .issue.label import LabelViewSet, BulkCreateIssueLabelsEndpoint
 from .issue.link import IssueLinkViewSet
 
 from .issue.relation import IssueRelationViewSet
+from .issue.jql import ProjectJQLEndpoint
 
 from .issue.reaction import IssueReactionViewSet
 

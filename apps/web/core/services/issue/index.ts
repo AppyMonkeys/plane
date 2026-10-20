@@ -16,3 +16,4 @@ export * from "./work_item_version.service";
 export * from "./workspace_draft.service";
 export * from "./issue_type.service";
 export * from "./work_item_template.service";
+export * from "./jql.service";
